@@ -9,7 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/admin")
@@ -27,7 +29,11 @@ public class AdminController {
             Admin admin = adminService.registerAdmin(request);
             return new ResponseEntity<>(new AuthResponse(null, "Registration successful"), HttpStatus.CREATED);
         } catch (RuntimeException e) {
+
             if (e.getMessage().equals("Email already exists") || e.getMessage().equals("Username already exists")) {
+
+            if (e.getMessage().equals("Email already exists")) {
+
                 return new ResponseEntity<>(new AuthResponse(null, e.getMessage()), HttpStatus.CONFLICT);
             }
             return new ResponseEntity<>(new AuthResponse(null, e.getMessage()), HttpStatus.BAD_REQUEST);
@@ -43,6 +49,7 @@ public class AdminController {
             return new ResponseEntity<>(new AuthResponse(null, e.getMessage()), HttpStatus.UNAUTHORIZED);
         }
     }
+
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
