@@ -25,20 +25,16 @@ public class AdminController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegistrationRequest request) {
-        try {
-            Admin admin = adminService.registerAdmin(request);
-            return new ResponseEntity<>(new AuthResponse(null, "Registration successful"), HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-
-            if (e.getMessage().equals("Email already exists") || e.getMessage().equals("Username already exists")) {
-
-            if (e.getMessage().equals("Email already exists")) {
-
-                return new ResponseEntity<>(new AuthResponse(null, e.getMessage()), HttpStatus.CONFLICT);
-            }
-            return new ResponseEntity<>(new AuthResponse(null, e.getMessage()), HttpStatus.BAD_REQUEST);
+    try {
+        Admin admin = adminService.registerAdmin(request);
+        return new ResponseEntity<>(new AuthResponse(null, "Registration successful"), HttpStatus.CREATED);
+    } catch (RuntimeException e) {
+        if (e.getMessage().equals("Email already exists") || e.getMessage().equals("Username already exists")) {
+            return new ResponseEntity<>(new AuthResponse(null, e.getMessage()), HttpStatus.CONFLICT);
         }
+        return new ResponseEntity<>(new AuthResponse(null, e.getMessage()), HttpStatus.BAD_REQUEST);
     }
+}
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
