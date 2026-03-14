@@ -11,7 +11,9 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -20,6 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.*;
 
 @Service
@@ -39,11 +42,11 @@ public class AmcService {
     @Value("${llm.model}")
     private String llmModel;
 
-    public AmcService(AmcContractRepository amcContractRepository, AdminRepository adminRepository) {
+    public AmcService(AmcContractRepository amcContractRepository, AdminRepository adminRepository, ObjectMapper objectMapper) {
         this.amcContractRepository = amcContractRepository;
         this.adminRepository = adminRepository;
         this.restTemplate = new RestTemplate();
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
 
     public AmcContract savePdf(MultipartFile file, String userEmail) throws IOException {
@@ -75,19 +78,36 @@ public class AmcService {
         String text;
         try {
             text = extractTextFromPdf(filePath.toFile());
+            if (text == null || text.trim().isEmpty()) {
+                throw new RuntimeException("PDF is empty or contains no readable text.");
+            }
         } catch (Exception e) {
-            throw new RuntimeException("Unable to read the PDF content. Please ensure the file is not corrupted.");
+            throw new RuntimeException("Unable to read the PDF content. Please ensure the file is not corrupted or contains readable text.");
         }
 
         String prompt = "Extract AMC contract details from the following text in JSON format. " +
-                "If a field is not found, leave it empty. " +
-                "Fields: companyName, machineName, brand, startDate (YYYY-MM-DD), endDate (YYYY-MM-DD), serviceFrequency, contactInfo. " +
-                "Return ONLY valid JSON.\n\n" +
-                "Text: " + text;
+                "Return ONLY valid JSON. If a field is not found, leave it empty.\n\n" +
+                "JSON Structure:\n" +
+                "{\n" +
+                "  \"companyName\": \"The service provider company name\",\n" +
+                "  \"machineName\": \"Name of the machine being serviced (e.g. Treadmill X1)\",\n" +
+                "  \"brand\": \"Brand of the machine (e.g. LifeFitness)\",\n" +
+                "  \"startDate\": \"YYYY-MM-DD\",\n" +
+                "  \"endDate\": \"YYYY-MM-DD\",\n" +
+                "  \"serviceFrequency\": \"Frequency of service (e.g. 3 months, 4 months)\",\n" +
+                "  \"contactInfo\": \"Contact info including phone or email\"\n" +
+                "}\n\n" +
+                "Text to extract from:\n" + text;
 
         try {
             String llmResponse = callLlm(prompt);
             AmcContractDto dto = parseLlmResponse(llmResponse);
+            
+            if ((dto.getCompanyName() == null || dto.getCompanyName().isEmpty()) && 
+                (dto.getMachineName() == null || dto.getMachineName().isEmpty())) {
+                throw new RuntimeException("AI was unable to extract core contract details from the PDF.");
+            }
+
             dto.setId(amcId);
             dto.setPdfFilename(contract.getPdfFilename());
             dto.setStatus("EXTRACTED");
@@ -97,9 +117,18 @@ public class AmcService {
 
             return dto;
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
-            throw new RuntimeException("The AI extraction service is currently unavailable. You can still enter details manually.");
+            System.err.println("LLM API Error: " + e.getStatusCode());
+            System.err.println("Response Body: " + e.getResponseBodyAsString());
+            
+            if (e.getStatusCode() == org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE) {
+                throw new RuntimeException("The AI service is currently overloaded due to high demand. Please wait a moment and click 'Retry AI Extraction'.");
+            }
+            if (e.getStatusCode() == org.springframework.http.HttpStatus.NOT_FOUND) {
+                throw new RuntimeException("The AI model is currently unavailable. Please contact support or enter details manually.");
+            }
+            throw new RuntimeException("AI Service Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
         } catch (Exception e) {
-            throw new RuntimeException("Automatic extraction failed. Please fill in the contract details manually below.");
+            throw new RuntimeException("Extraction failed: " + e.getMessage());
         }
     }
 
@@ -138,22 +167,15 @@ public class AmcService {
         }
     }
 
-    private AmcContractDto parseLlmResponse(String jsonString) {
-        try {
-            int start = jsonString.indexOf("{");
-            int end = jsonString.lastIndexOf("}");
-            if (start == -1 || end == -1) {
-                throw new RuntimeException("No valid data found in AI response.");
-            }
-            jsonString = jsonString.substring(start, end + 1);
-            
-            return objectMapper.readValue(jsonString, AmcContractDto.class);
-        } catch (Exception e) {
-            AmcContractDto fallback = new AmcContractDto();
-            fallback.setCompanyName("");
-            fallback.setMachineName("Manual Entry Required");
-            return fallback;
+    private AmcContractDto parseLlmResponse(String jsonString) throws IOException {
+        int start = jsonString.indexOf("{");
+        int end = jsonString.lastIndexOf("}");
+        if (start == -1 || end == -1) {
+            throw new RuntimeException("No valid data found in AI response.");
         }
+        jsonString = jsonString.substring(start, end + 1);
+        
+        return objectMapper.readValue(jsonString, AmcContractDto.class);
     }
 
     public List<AmcContract> getAmcsByAdmin(String userEmail) {
@@ -181,5 +203,30 @@ public class AmcService {
         }
 
         return amcContractRepository.save(contract);
+    }
+
+    /**
+     * Scheduled job to check and update AMC contract statuses daily.
+     * Contracts that were "ACTIVE" but have reached their "endDate"
+     * will be updated to "EXPIRED".
+     * Runs every day at midnight (00:00:00).
+     */
+    @Scheduled(cron = "0 0 0 * * ?")
+    @Transactional
+    public void updateContractStatusesDaily() {
+        LocalDate today = LocalDate.now();
+        List<AmcContract> contracts = amcContractRepository.findAll();
+        
+        for (AmcContract contract : contracts) {
+            // Only update "ACTIVE" contracts that have passed their end date
+            if ("ACTIVE".equals(contract.getStatus()) && 
+                contract.getEndDate() != null && 
+                contract.getEndDate().isBefore(today)) {
+                
+                contract.setStatus("EXPIRED");
+                amcContractRepository.save(contract);
+                System.out.println("Contract ID " + contract.getId() + " status updated to EXPIRED by scheduled job.");
+            }
+        }
     }
 }

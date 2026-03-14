@@ -68,10 +68,11 @@ const AmcDetails = () => {
       
       <div className="card">
         <div className="card-title">
-          AMC Contract Verification
+          AMC Contract Verification{' '}
           <span className={`status-badge ${
             status === 'ACTIVE' ? 'status-active' : 
-            status === 'EXPIRED' ? 'status-expired' : 'status-pending'
+            status === 'EXPIRED' ? 'status-expired' : 
+            status === 'EXTRACTED' ? 'status-extracted' : 'status-pending'
           }`}>
             {status || 'PENDING'}
           </span>

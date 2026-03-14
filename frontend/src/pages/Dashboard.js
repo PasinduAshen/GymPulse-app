@@ -142,7 +142,8 @@ const Dashboard = () => {
                     <td>
                       <span className={`status-badge ${
                         amc.status === 'ACTIVE' ? 'status-active' : 
-                        amc.status === 'EXPIRED' ? 'status-expired' : 'status-pending'
+                        amc.status === 'EXPIRED' ? 'status-expired' : 
+                        amc.status === 'EXTRACTED' ? 'status-extracted' : 'status-pending'
                       }`}>
                         {amc.status || 'PENDING'}
                       </span>
