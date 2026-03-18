@@ -198,6 +198,29 @@ public class AmcService {
     }
 
     @Transactional
+    public ServiceSchedule completeService(Long serviceId, String notes, String userEmail) {
+        Admin admin = adminRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Admin account not found."));
+
+        ServiceSchedule schedule = serviceScheduleRepository.findById(serviceId)
+                .orElseThrow(() -> new RuntimeException("Service schedule not found with ID: " + serviceId));
+
+        if (!schedule.getAmcContract().getAdmin().getId().equals(admin.getId())) {
+            throw new RuntimeException("Unauthorized: This service schedule does not belong to you.");
+        }
+
+        if ("COMPLETED".equals(schedule.getStatus())) {
+            throw new RuntimeException("Service is already marked as completed.");
+        }
+
+        schedule.setStatus("COMPLETED");
+        schedule.setCompletedDate(LocalDate.now());
+        schedule.setNotes(notes);
+
+        return serviceScheduleRepository.save(schedule);
+    }
+
+    @Transactional
     public AmcContract updateAmc(Long id, AmcContractDto dto) {
         AmcContract contract = amcContractRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contract not found with ID: " + id));

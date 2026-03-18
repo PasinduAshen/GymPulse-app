@@ -8,6 +8,13 @@ const Services = () => {
   const [filterStatus, setFilterStatus] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  
+  // Completion Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [selectedService, setSelectedService] = useState(null);
+  const [completionNotes, setCompletionNotes] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -27,6 +34,29 @@ const Services = () => {
       setError('Failed to load service schedules.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const openCompletionModal = (service) => {
+    setSelectedService(service);
+    setCompletionNotes('');
+    setShowModal(true);
+  };
+
+  const handleCompleteService = async () => {
+    if (!selectedService) return;
+    
+    setIsSubmitting(true);
+    try {
+      await amcService.completeService(selectedService.id, completionNotes);
+      setShowModal(false);
+      // Refresh the schedules list to reflect the new state
+      fetchSchedules();
+    } catch (err) {
+      const msg = err.response?.data || 'Failed to complete service.';
+      setError(typeof msg === 'object' ? JSON.stringify(msg) : msg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -133,8 +163,9 @@ const Services = () => {
                     <td>
                       <div className="action-group">
                         <button 
-                          className="btn btn-outline btn-small" 
+                          className="btn btn-primary btn-small" 
                           disabled={schedule.status === 'COMPLETED'}
+                          onClick={() => openCompletionModal(schedule)}
                         >
                           Mark Complete
                         </button>
@@ -147,6 +178,108 @@ const Services = () => {
           </table>
         </div>
       </div>
+
+      {/* Completion Modal */}
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '500px' }}>
+            <div className="modal-header">
+              <h3>Confirm Maintenance Completion</h3>
+              <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>
+            </div>
+            <div className="modal-body">
+              <p style={{ marginBottom: '1rem' }}>
+                Are you sure you want to mark maintenance for <strong>{selectedService?.amcContract?.machineName}</strong> as completed?
+              </p>
+              
+              <div className="form-group">
+                <label>Completion Notes (Optional)</label>
+                <textarea 
+                  className="form-input" 
+                  style={{ minHeight: '100px', paddingTop: '0.75rem' }}
+                  placeholder="E.g. Lubricated belt, replaced filter..."
+                  value={completionNotes}
+                  onChange={(e) => setCompletionNotes(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button 
+                className="btn btn-outline" 
+                onClick={() => setShowModal(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleCompleteService}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Updating...' : 'Confirm Completion'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          backdrop-filter: blur(4px);
+        }
+        .modal-content {
+          background: white;
+          border-radius: 12px;
+          width: 90%;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          overflow: hidden;
+          animation: modalAppear 0.3s ease-out;
+        }
+        @keyframes modalAppear {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .modal-header {
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .modal-header h3 {
+          margin: 0;
+          font-size: 1.25rem;
+          color: #1e293b;
+        }
+        .close-btn {
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          color: #64748b;
+          cursor: pointer;
+        }
+        .modal-body {
+          padding: 1.5rem;
+        }
+        .modal-footer {
+          padding: 1.25rem 1.5rem;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: flex-end;
+          gap: 0.75rem;
+        }
+      `}</style>
     </>
   );
 };

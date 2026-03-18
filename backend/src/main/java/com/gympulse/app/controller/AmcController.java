@@ -1,6 +1,7 @@
 package com.gympulse.app.controller;
 
 import com.gympulse.app.dto.AmcContractDto;
+import com.gympulse.app.dto.ServiceCompletionRequest;
 import com.gympulse.app.model.AmcContract;
 import com.gympulse.app.model.ServiceSchedule;
 import com.gympulse.app.service.AmcService;
@@ -84,5 +85,17 @@ public class AmcController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         return new ResponseEntity<>(amcService.getSchedulesByAdmin(userEmail), HttpStatus.OK);
+    }
+
+    @PostMapping("/schedules/{id}/complete")
+    public ResponseEntity<?> completeService(@PathVariable Long id, @RequestBody ServiceCompletionRequest request) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String userEmail = auth.getName();
+            ServiceSchedule completed = amcService.completeService(id, request.getNotes(), userEmail);
+            return new ResponseEntity<>(completed, HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
     }
 }

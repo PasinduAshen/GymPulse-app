@@ -19,6 +19,11 @@ public class ServiceSchedule {
     @Column(name = "scheduled_date")
     private LocalDate scheduledDate;
 
+    @Column(name = "completed_date")
+    private LocalDate completedDate;
+
+    private String notes;
+
     private String status = "PENDING";
 
     @Column(name = "created_at")
@@ -46,6 +51,12 @@ public class ServiceSchedule {
 
     public LocalDate getScheduledDate() { return scheduledDate; }
     public void setScheduledDate(LocalDate scheduledDate) { this.scheduledDate = scheduledDate; }
+
+    public LocalDate getCompletedDate() { return completedDate; }
+    public void setCompletedDate(LocalDate completedDate) { this.completedDate = completedDate; }
+
+    public String getNotes() { return notes; }
+    public void setNotes(String notes) { this.notes = notes; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
