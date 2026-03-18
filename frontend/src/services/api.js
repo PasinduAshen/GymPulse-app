@@ -37,7 +37,8 @@ export const amcService = {
   }),
   extractDetails: (id) => api.post(`/amc/extract?amcId=${id}`),
   updateAmc: (id, data) => api.put(`/amc/${id}`, data),
-  getAmcs: () => api.get('/amc/my-contracts'), 
+  getAmcs: () => api.get('/amc/my-contracts'),
+  getSchedules: () => api.get('/amc/schedules'),
 };
 
 export default api;

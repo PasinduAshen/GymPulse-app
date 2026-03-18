@@ -2,6 +2,7 @@ package com.gympulse.app.controller;
 
 import com.gympulse.app.dto.AmcContractDto;
 import com.gympulse.app.model.AmcContract;
+import com.gympulse.app.model.ServiceSchedule;
 import com.gympulse.app.service.AmcService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -76,5 +77,12 @@ public class AmcController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         return new ResponseEntity<>(amcService.getAmcsByAdmin(userEmail), HttpStatus.OK);
+    }
+
+    @GetMapping("/schedules")
+    public ResponseEntity<List<ServiceSchedule>> getMySchedules() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = auth.getName();
+        return new ResponseEntity<>(amcService.getSchedulesByAdmin(userEmail), HttpStatus.OK);
     }
 }

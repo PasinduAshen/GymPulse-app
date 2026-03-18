@@ -191,6 +191,12 @@ public class AmcService {
         return amcContractRepository.findByAdminId(admin.getId());
     }
 
+    public List<ServiceSchedule> getSchedulesByAdmin(String userEmail) {
+        Admin admin = adminRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Admin account not found."));
+        return serviceScheduleRepository.findByAdminId(admin.getId());
+    }
+
     @Transactional
     public AmcContract updateAmc(Long id, AmcContractDto dto) {
         AmcContract contract = amcContractRepository.findById(id)
