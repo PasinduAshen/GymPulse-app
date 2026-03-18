@@ -3,8 +3,10 @@ package com.gympulse.app.service;
 import com.gympulse.app.dto.AmcContractDto;
 import com.gympulse.app.model.Admin;
 import com.gympulse.app.model.AmcContract;
+import com.gympulse.app.model.ServiceSchedule;
 import com.gympulse.app.repository.AdminRepository;
 import com.gympulse.app.repository.AmcContractRepository;
+import com.gympulse.app.repository.ServiceScheduleRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -30,6 +32,7 @@ public class AmcService {
 
     private final AmcContractRepository amcContractRepository;
     private final AdminRepository adminRepository;
+    private final ServiceScheduleRepository serviceScheduleRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
@@ -42,9 +45,13 @@ public class AmcService {
     @Value("${llm.model}")
     private String llmModel;
 
-    public AmcService(AmcContractRepository amcContractRepository, AdminRepository adminRepository, ObjectMapper objectMapper) {
+    public AmcService(AmcContractRepository amcContractRepository, 
+                      AdminRepository adminRepository, 
+                      ServiceScheduleRepository serviceScheduleRepository,
+                      ObjectMapper objectMapper) {
         this.amcContractRepository = amcContractRepository;
         this.adminRepository = adminRepository;
+        this.serviceScheduleRepository = serviceScheduleRepository;
         this.restTemplate = new RestTemplate();
         this.objectMapper = objectMapper;
     }
@@ -184,6 +191,7 @@ public class AmcService {
         return amcContractRepository.findByAdminId(admin.getId());
     }
 
+    @Transactional
     public AmcContract updateAmc(Long id, AmcContractDto dto) {
         AmcContract contract = amcContractRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Contract not found with ID: " + id));
@@ -200,9 +208,55 @@ public class AmcService {
             contract.setStatus("EXPIRED");
         } else {
             contract.setStatus("ACTIVE");
+            // Generate service schedules when contract is confirmed/updated to ACTIVE
+            generateServiceSchedules(contract);
         }
 
         return amcContractRepository.save(contract);
+    }
+
+    private void generateServiceSchedules(AmcContract contract) {
+        // Clear existing schedules for this AMC
+        serviceScheduleRepository.deleteByAmcContractId(contract.getId());
+
+        if (contract.getStartDate() == null || contract.getEndDate() == null || contract.getServiceFrequency() == null) {
+            return;
+        }
+
+        int monthsToAdd = 0;
+        String freq = contract.getServiceFrequency().toLowerCase();
+
+        if (freq.contains("monthly")) {
+            monthsToAdd = 1;
+        } else if (freq.contains("quarterly")) {
+            monthsToAdd = 3;
+        } else if (freq.contains("half-yearly") || freq.contains("6 months")) {
+            monthsToAdd = 6;
+        } else if (freq.contains("annually") || freq.contains("yearly")) {
+            monthsToAdd = 12;
+        } else {
+            // Try to extract number from "X months" or similar strings
+            try {
+                String numericPart = freq.replaceAll("[^0-9]", "");
+                if (!numericPart.isEmpty()) {
+                    monthsToAdd = Integer.parseInt(numericPart);
+                }
+            } catch (Exception e) {
+                monthsToAdd = 3; // Default fallback
+            }
+        }
+
+        if (monthsToAdd <= 0) monthsToAdd = 3; // Default fallback
+
+        LocalDate nextDate = contract.getStartDate().plusMonths(monthsToAdd);
+        while (nextDate.isBefore(contract.getEndDate()) || nextDate.isEqual(contract.getEndDate())) {
+            ServiceSchedule schedule = new ServiceSchedule();
+            schedule.setAmcContract(contract);
+            schedule.setScheduledDate(nextDate);
+            schedule.setStatus("PENDING");
+            serviceScheduleRepository.save(schedule);
+            nextDate = nextDate.plusMonths(monthsToAdd);
+        }
     }
 
     /**
