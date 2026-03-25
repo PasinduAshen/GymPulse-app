@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { amcService } from '../services/api';
+import ServiceHistory from '../components/ServiceHistory';
 
 const AmcDetails = () => {
   const { id } = useParams();
@@ -82,7 +83,6 @@ const AmcDetails = () => {
         {error && <div className="error-msg">{error}</div>}
 
         <form onSubmit={handleConfirm}>
-          {/* ... grid remains same ... */}
           <div className="details-grid">
             <div className="form-group">
               <label>Company Name</label>
@@ -125,8 +125,11 @@ const AmcDetails = () => {
                 required
               >
                 <option value="">Select Frequency</option>
+                <option value="1 months">1 month</option>
                 <option value="3 months">3 months</option>
                 <option value="4 months">4 months</option>
+                <option value="6 months">6 months</option>
+                <option value="12 months">12 months</option>
               </select>
             </div>
             <div className="form-group">
@@ -179,6 +182,8 @@ const AmcDetails = () => {
           </div>
         </form>
       </div>
+
+      {status === 'ACTIVE' && id && <ServiceHistory amcId={id} />}
     </div>
   );
 };
