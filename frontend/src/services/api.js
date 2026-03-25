@@ -28,7 +28,8 @@ export const authService = {
   verifyCode: (email, code) => api.post('/admin/verify-code', { email, code }),
   resetPassword: (data) => api.post('/admin/reset-password', data),
   logout: () => localStorage.removeItem('token'),
-  };
+};
+
 export const amcService = {
   uploadPdf: (formData) => api.post('/amc/upload', formData, {
     headers: {
@@ -38,8 +39,19 @@ export const amcService = {
   extractDetails: (id) => api.post(`/amc/extract?amcId=${id}`),
   updateAmc: (id, data) => api.put(`/amc/${id}`, data),
   getAmcs: () => api.get('/amc/my-contracts'),
-  getSchedules: () => api.get('/amc/schedules'),
+  getSchedules: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.status && filters.status !== 'All') params.append('status', filters.status.toUpperCase());
+    if (filters.machineName) params.append('machineName', filters.machineName);
+    if (filters.brand) params.append('brand', filters.brand);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
+    
+    const query = params.toString();
+    return api.get(`/amc/schedules${query ? `?${query}` : ''}`);
+  },
   completeService: (id, notes) => api.post(`/amc/schedules/${id}/complete`, { notes }),
+  getServiceHistory: (amcId) => api.get(`/amc/contracts/${amcId}/history`),
 };
 
 export default api;

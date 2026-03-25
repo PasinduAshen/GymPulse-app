@@ -1,9 +1,7 @@
 package com.gympulse.app.service;
 
 import com.gympulse.app.dto.AmcContractDto;
-import com.gympulse.app.model.Admin;
-import com.gympulse.app.model.AmcContract;
-import com.gympulse.app.model.ServiceSchedule;
+import com.gympulse.app.model.*;
 import com.gympulse.app.repository.AdminRepository;
 import com.gympulse.app.repository.AmcContractRepository;
 import com.gympulse.app.repository.ServiceScheduleRepository;
@@ -93,18 +91,32 @@ public class AmcService {
         }
 
         String prompt = "Extract AMC contract details from the following text in JSON format. " +
-                "Return ONLY valid JSON. If a field is not found, leave it empty.\n\n" +
-                "JSON Structure:\n" +
-                "{\n" +
-                "  \"companyName\": \"The service provider company name\",\n" +
-                "  \"machineName\": \"Name of the machine being serviced (e.g. Treadmill X1)\",\n" +
-                "  \"brand\": \"Brand of the machine (e.g. LifeFitness)\",\n" +
-                "  \"startDate\": \"YYYY-MM-DD\",\n" +
-                "  \"endDate\": \"YYYY-MM-DD\",\n" +
-                "  \"serviceFrequency\": \"Frequency of service (e.g. 3 months, 4 months)\",\n" +
-                "  \"contactInfo\": \"Contact info including phone or email\"\n" +
-                "}\n\n" +
-                "Text to extract from:\n" + text;
+                "Return ONLY valid JSON. If a field is not found, leave it empty.
+
+" +
+                "JSON Structure:
+" +
+                "{
+" +
+                "  "companyName": "The service provider company name",
+" +
+                "  "machineName": "Name of the machine being serviced (e.g. Treadmill X1)",
+" +
+                "  "brand": "Brand of the machine (e.g. LifeFitness)",
+" +
+                "  "startDate": "YYYY-MM-DD",
+" +
+                "  "endDate": "YYYY-MM-DD",
+" +
+                "  "serviceFrequency": "Frequency of service (e.g. 3 months, 4 months)",
+" +
+                "  "contactInfo": "Contact info including phone or email"
+" +
+                "}
+
+" +
+                "Text to extract from:
+" + text;
 
         try {
             String llmResponse = callLlm(prompt);
@@ -124,16 +136,10 @@ public class AmcService {
 
             return dto;
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
-            System.err.println("LLM API Error: " + e.getStatusCode());
-            System.err.println("Response Body: " + e.getResponseBodyAsString());
-            
             if (e.getStatusCode() == org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE) {
                 throw new RuntimeException("The AI service is currently overloaded due to high demand. Please wait a moment and click 'Retry AI Extraction'.");
             }
-            if (e.getStatusCode() == org.springframework.http.HttpStatus.NOT_FOUND) {
-                throw new RuntimeException("The AI model is currently unavailable. Please contact support or enter details manually.");
-            }
-            throw new RuntimeException("AI Service Error: " + e.getStatusCode() + " - " + e.getResponseBodyAsString());
+            throw new RuntimeException("AI Service Error: " + e.getStatusCode());
         } catch (Exception e) {
             throw new RuntimeException("Extraction failed: " + e.getMessage());
         }
@@ -197,6 +203,26 @@ public class AmcService {
         return serviceScheduleRepository.findByAdminId(admin.getId());
     }
 
+    public List<ServiceSchedule> filterSchedules(String userEmail, ServiceStatus status, String machineName, String brand, LocalDate startDate, LocalDate endDate) {
+        Admin admin = adminRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Admin account not found."));
+        return serviceScheduleRepository.filterSchedules(admin.getId(), status, machineName, brand, startDate, endDate);
+    }
+
+    public List<ServiceSchedule> getServiceHistory(Long amcId, String userEmail) {
+        Admin admin = adminRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Admin account not found."));
+        
+        AmcContract contract = amcContractRepository.findById(amcId)
+                .orElseThrow(() -> new RuntimeException("Contract not found with ID: " + amcId));
+
+        if (!contract.getAdmin().getId().equals(admin.getId())) {
+            throw new RuntimeException("Unauthorized access to contract history.");
+        }
+
+        return serviceScheduleRepository.findHistoryByAmcId(amcId);
+    }
+
     @Transactional
     public ServiceSchedule completeService(Long serviceId, String notes, String userEmail) {
         Admin admin = adminRepository.findByEmail(userEmail)
@@ -209,11 +235,11 @@ public class AmcService {
             throw new RuntimeException("Unauthorized: This service schedule does not belong to you.");
         }
 
-        if ("COMPLETED".equals(schedule.getStatus())) {
+        if (ServiceStatus.COMPLETED.equals(schedule.getStatus())) {
             throw new RuntimeException("Service is already marked as completed.");
         }
 
-        schedule.setStatus("COMPLETED");
+        schedule.setStatus(ServiceStatus.COMPLETED);
         schedule.setCompletedDate(LocalDate.now());
         schedule.setNotes(notes);
 
@@ -237,7 +263,6 @@ public class AmcService {
             contract.setStatus("EXPIRED");
         } else {
             contract.setStatus("ACTIVE");
-            // Generate service schedules when contract is confirmed/updated to ACTIVE
             generateServiceSchedules(contract);
         }
 
@@ -245,7 +270,6 @@ public class AmcService {
     }
 
     private void generateServiceSchedules(AmcContract contract) {
-        // Clear existing schedules for this AMC
         serviceScheduleRepository.deleteByAmcContractId(contract.getId());
 
         if (contract.getStartDate() == null || contract.getEndDate() == null || contract.getServiceFrequency() == null) {
@@ -255,60 +279,69 @@ public class AmcService {
         int monthsToAdd = 0;
         String freq = contract.getServiceFrequency().toLowerCase();
 
-        if (freq.contains("monthly")) {
-            monthsToAdd = 1;
-        } else if (freq.contains("quarterly")) {
-            monthsToAdd = 3;
-        } else if (freq.contains("half-yearly") || freq.contains("6 months")) {
-            monthsToAdd = 6;
-        } else if (freq.contains("annually") || freq.contains("yearly")) {
-            monthsToAdd = 12;
-        } else {
-            // Try to extract number from "X months" or similar strings
+        if (freq.contains("monthly")) monthsToAdd = 1;
+        else if (freq.contains("quarterly")) monthsToAdd = 3;
+        else if (freq.contains("half-yearly") || freq.contains("6 months")) monthsToAdd = 6;
+        else if (freq.contains("annually") || freq.contains("yearly")) monthsToAdd = 12;
+        else {
             try {
                 String numericPart = freq.replaceAll("[^0-9]", "");
-                if (!numericPart.isEmpty()) {
-                    monthsToAdd = Integer.parseInt(numericPart);
-                }
-            } catch (Exception e) {
-                monthsToAdd = 3; // Default fallback
-            }
+                if (!numericPart.isEmpty()) monthsToAdd = Integer.parseInt(numericPart);
+            } catch (Exception e) { monthsToAdd = 3; }
         }
 
-        if (monthsToAdd <= 0) monthsToAdd = 3; // Default fallback
+        if (monthsToAdd <= 0) monthsToAdd = 3;
 
         LocalDate nextDate = contract.getStartDate().plusMonths(monthsToAdd);
+        LocalDate today = LocalDate.now();
+        
         while (nextDate.isBefore(contract.getEndDate()) || nextDate.isEqual(contract.getEndDate())) {
             ServiceSchedule schedule = new ServiceSchedule();
             schedule.setAmcContract(contract);
             schedule.setScheduledDate(nextDate);
-            schedule.setStatus("PENDING");
+            
+            // Logic to set status to OVERDUE if generated for a past date
+            if (nextDate.isBefore(today)) {
+                schedule.setStatus(ServiceStatus.OVERDUE);
+            } else {
+                schedule.setStatus(ServiceStatus.PENDING);
+            }
+            
             serviceScheduleRepository.save(schedule);
             nextDate = nextDate.plusMonths(monthsToAdd);
         }
     }
 
     /**
-     * Scheduled job to check and update AMC contract statuses daily.
-     * Contracts that were "ACTIVE" but have reached their "endDate"
-     * will be updated to "EXPIRED".
-     * Runs every day at midnight (00:00:00).
+     * Scheduled job to detect overdue services and update contract statuses daily.
+     * Runs every day at midnight.
      */
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
-    public void updateContractStatusesDaily() {
+    public void runDailyMaintenance() {
         LocalDate today = LocalDate.now();
-        List<AmcContract> contracts = amcContractRepository.findAll();
         
+        // 1. Detect and update Overdue services (SCRUM-63, 64, 65)
+        List<ServiceSchedule> overdueSchedules = serviceScheduleRepository.findOverdueSchedules(today);
+        for (ServiceSchedule schedule : overdueSchedules) {
+            // Ensure logic excludes COMPLETED services (SCRUM-66)
+            if (schedule.getStatus() == ServiceStatus.PENDING) {
+                schedule.setStatus(ServiceStatus.OVERDUE);
+                serviceScheduleRepository.save(schedule);
+                System.out.println("Service Schedule ID " + schedule.getId() + " marked as OVERDUE.");
+            }
+        }
+
+        // 2. Update Contract statuses (ACTIVE -> EXPIRED)
+        List<AmcContract> contracts = amcContractRepository.findAll();
         for (AmcContract contract : contracts) {
-            // Only update "ACTIVE" contracts that have passed their end date
             if ("ACTIVE".equals(contract.getStatus()) && 
                 contract.getEndDate() != null && 
                 contract.getEndDate().isBefore(today)) {
                 
                 contract.setStatus("EXPIRED");
                 amcContractRepository.save(contract);
-                System.out.println("Contract ID " + contract.getId() + " status updated to EXPIRED by scheduled job.");
+                System.out.println("Contract ID " + contract.getId() + " status updated to EXPIRED.");
             }
         }
     }

@@ -4,7 +4,9 @@ import com.gympulse.app.dto.AmcContractDto;
 import com.gympulse.app.dto.ServiceCompletionRequest;
 import com.gympulse.app.model.AmcContract;
 import com.gympulse.app.model.ServiceSchedule;
+import com.gympulse.app.model.ServiceStatus;
 import com.gympulse.app.service.AmcService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -12,6 +14,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -37,14 +40,11 @@ public class AmcController {
         }
         
         if (!isPdf) {
-            return new ResponseEntity<>("File is not a PDF (Type: " + contentType + ", Name: " + filename + ")", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("File is not a PDF", HttpStatus.BAD_REQUEST);
         }
 
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null || !auth.isAuthenticated()) {
-                return new ResponseEntity<>("User not authenticated", HttpStatus.UNAUTHORIZED);
-            }
             String userEmail = auth.getName();
             AmcContract contract = amcService.savePdf(file, userEmail);
             return new ResponseEntity<>(contract.getId(), HttpStatus.CREATED);
@@ -81,10 +81,32 @@ public class AmcController {
     }
 
     @GetMapping("/schedules")
-    public ResponseEntity<List<ServiceSchedule>> getMySchedules() {
+    public ResponseEntity<List<ServiceSchedule>> getSchedules(
+            @RequestParam(required = false) ServiceStatus status,
+            @RequestParam(required = false) String machineName,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
+        
+        if (status != null || machineName != null || brand != null || startDate != null || endDate != null) {
+            return new ResponseEntity<>(amcService.filterSchedules(userEmail, status, machineName, brand, startDate, endDate), HttpStatus.OK);
+        }
+        
         return new ResponseEntity<>(amcService.getSchedulesByAdmin(userEmail), HttpStatus.OK);
+    }
+
+    @GetMapping("/contracts/{id}/history")
+    public ResponseEntity<List<ServiceSchedule>> getServiceHistory(@PathVariable Long id) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String userEmail = auth.getName();
+        try {
+            return new ResponseEntity<>(amcService.getServiceHistory(id, userEmail), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>(null, HttpStatus.FORBIDDEN);
+        }
     }
 
     @PostMapping("/schedules/{id}/complete")
