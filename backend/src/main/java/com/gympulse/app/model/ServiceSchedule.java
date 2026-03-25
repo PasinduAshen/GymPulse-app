@@ -24,7 +24,8 @@ public class ServiceSchedule {
 
     private String notes;
 
-    private String status = "PENDING";
+    @Enumerated(EnumType.STRING)
+    private ServiceStatus status = ServiceStatus.PENDING;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -58,8 +59,8 @@ public class ServiceSchedule {
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public ServiceStatus getStatus() { return status; }
+    public void setStatus(ServiceStatus status) { this.status = status; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
