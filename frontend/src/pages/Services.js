@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { amcService, authService } from '../services/api';
+import ServicesFilter from '../components/ServicesFilter';
 
 const Services = () => {
   const [schedules, setSchedules] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('All');
+  const [filters, setFilters] = useState({
+    status: 'All',
+    machineName: '',
+    brand: '',
+    startDate: '',
+    endDate: ''
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -17,14 +23,10 @@ const Services = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchSchedules();
-  }, []);
-
-  const fetchSchedules = async () => {
+  const fetchSchedules = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await amcService.getSchedules();
+      const response = await amcService.getSchedules(filters);
       setSchedules(response.data);
     } catch (err) {
       if (err.response?.status === 403 || err.response?.status === 401) {
@@ -35,6 +37,20 @@ const Services = () => {
     } finally {
       setLoading(false);
     }
+  }, [filters, navigate]);
+
+  useEffect(() => {
+    fetchSchedules();
+  }, [fetchSchedules]);
+
+  const handleResetFilters = () => {
+    setFilters({
+      status: 'All',
+      machineName: '',
+      brand: '',
+      startDate: '',
+      endDate: ''
+    });
   };
 
   const openCompletionModal = (service) => {
@@ -50,7 +66,6 @@ const Services = () => {
     try {
       await amcService.completeService(selectedService.id, completionNotes);
       setShowModal(false);
-      // Refresh the schedules list to reflect the new state
       fetchSchedules();
     } catch (err) {
       const msg = err.response?.data || 'Failed to complete service.';
@@ -59,21 +74,6 @@ const Services = () => {
       setIsSubmitting(false);
     }
   };
-
-  const filteredSchedules = schedules.filter(schedule => {
-    const machineName = schedule.amcContract?.machineName || '';
-    const brand = schedule.amcContract?.brand || '';
-    
-    const matchesSearch = 
-      machineName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      brand.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = 
-      filterStatus === 'All' || 
-      schedule.status === filterStatus.toUpperCase();
-    
-    return matchesSearch && matchesFilter;
-  });
 
   return (
     <>
@@ -86,30 +86,11 @@ const Services = () => {
         </div>
       </div>
 
-      <div className="controls-row">
-        <div className="search-wrapper">
-          <svg className="search-icon" style={{width: '18px'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Search machine or brand..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <div className="filter-group">
-          {['All', 'Pending', 'Completed'].map(status => (
-            <button 
-              key={status}
-              className={`filter-btn ${filterStatus === status ? 'active' : ''}`}
-              onClick={() => setFilterStatus(status)}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-      </div>
+      <ServicesFilter 
+        filters={filters} 
+        setFilters={setFilters} 
+        onReset={handleResetFilters} 
+      />
 
       {error && <div className="error-msg">{error}</div>}
 
@@ -132,14 +113,14 @@ const Services = () => {
                     Loading schedules...
                   </td>
                 </tr>
-              ) : filteredSchedules.length === 0 ? (
+              ) : schedules.length === 0 ? (
                 <tr>
                   <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
-                    No service schedules found.
+                    No service schedules found matching the filters.
                   </td>
                 </tr>
               ) : (
-                filteredSchedules.map(schedule => (
+                schedules.map(schedule => (
                   <tr key={schedule.id}>
                     <td>
                       <div className="machine-cell">
@@ -155,7 +136,8 @@ const Services = () => {
                     </td>
                     <td>
                       <span className={`status-badge ${
-                        schedule.status === 'COMPLETED' ? 'status-active' : 'status-pending'
+                        schedule.status === 'COMPLETED' ? 'status-active' : 
+                        schedule.status === 'OVERDUE' ? 'status-expired' : 'status-pending'
                       }`}>
                         {schedule.status}
                       </span>
