@@ -17,12 +17,14 @@ public interface ServiceScheduleRepository extends JpaRepository<ServiceSchedule
     @Query("SELECT s FROM ServiceSchedule s WHERE s.amcContract.id = :amcId ORDER BY s.scheduledDate DESC")
     List<ServiceSchedule> findHistoryByAmcId(@Param("amcId") Long amcId);
 
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.transaction.annotation.Transactional
     void deleteByAmcContractId(Long amcId);
     
-    @Query("SELECT s FROM ServiceSchedule s JOIN s.amcContract a WHERE a.admin.id = :adminId ORDER BY s.scheduledDate ASC")
+    @Query("SELECT s FROM ServiceSchedule s JOIN FETCH s.amcContract a WHERE a.admin.id = :adminId ORDER BY s.scheduledDate ASC")
     List<ServiceSchedule> findByAdminId(@Param("adminId") Long adminId);
 
-    @Query("SELECT s FROM ServiceSchedule s JOIN s.amcContract a WHERE a.admin.id = :adminId " +
+    @Query("SELECT s FROM ServiceSchedule s JOIN FETCH s.amcContract a WHERE a.admin.id = :adminId " +
            "AND (:status IS NULL OR s.status = :status) " +
            "AND (:machineName IS NULL OR LOWER(a.machineName) LIKE LOWER(CONCAT('%', :machineName, '%'))) " +
            "AND (:brand IS NULL OR LOWER(a.brand) LIKE LOWER(CONCAT('%', :brand, '%'))) " +
@@ -38,6 +40,6 @@ public interface ServiceScheduleRepository extends JpaRepository<ServiceSchedule
             @Param("endDate") LocalDate endDate
     );
 
-    @Query("SELECT s FROM ServiceSchedule s WHERE s.status = 'PENDING' AND s.scheduledDate < :today")
+    @Query("SELECT s FROM ServiceSchedule s WHERE s.status = com.gympulse.app.model.ServiceStatus.PENDING AND s.scheduledDate < :today")
     List<ServiceSchedule> findOverdueSchedules(@Param("today") LocalDate today);
 }

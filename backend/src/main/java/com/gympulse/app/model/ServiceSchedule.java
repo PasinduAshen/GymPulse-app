@@ -13,7 +13,6 @@ public class ServiceSchedule {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "amc_id", nullable = false)
-    @com.fasterxml.jackson.annotation.JsonIgnore
     private AmcContract amcContract;
 
     @Column(name = "scheduled_date")
