@@ -90,34 +90,20 @@ public class AmcService {
             throw new RuntimeException("Unable to read the PDF content. Please ensure the file is not corrupted or contains readable text.");
         }
 
-        String prompt = "Extract AMC contract details from the following text in JSON format. " +
-                "Return ONLY valid JSON. If a field is not found, leave it empty.
-
-" +
-                "JSON Structure:
-" +
-                "{
-" +
-                "  "companyName": "The service provider company name",
-" +
-                "  "machineName": "Name of the machine being serviced (e.g. Treadmill X1)",
-" +
-                "  "brand": "Brand of the machine (e.g. LifeFitness)",
-" +
-                "  "startDate": "YYYY-MM-DD",
-" +
-                "  "endDate": "YYYY-MM-DD",
-" +
-                "  "serviceFrequency": "Frequency of service (e.g. 3 months, 4 months)",
-" +
-                "  "contactInfo": "Contact info including phone or email"
-" +
-                "}
-
-" +
-                "Text to extract from:
-" + text;
-
+        String prompt = "Extract AMC contract details from the following text in JSON format. "
+        + "Return ONLY valid JSON. If a field is not found, leave it empty.\n"
+        + "JSON Structure:\n"
+        + "{\n"
+        + "  \"companyName\": \"The service provider company name\",\n"
+        + "  \"machineName\": \"Name of the machine being serviced (e.g. Treadmill X1)\",\n"
+        + "  \"brand\": \"Brand of the machine (e.g. LifeFitness)\",\n"
+        + "  \"startDate\": \"YYYY-MM-DD\",\n"
+        + "  \"endDate\": \"YYYY-MM-DD\",\n"
+        + "  \"serviceFrequency\": \"Frequency of service (e.g. 3 months, 4 months)\",\n"
+        + "  \"contactInfo\": \"Contact info including phone or email\"\n"
+        + "}\n"
+        + "Text to extract from:\n"
+        + text;
         try {
             String llmResponse = callLlm(prompt);
             AmcContractDto dto = parseLlmResponse(llmResponse);
