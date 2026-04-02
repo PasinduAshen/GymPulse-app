@@ -44,3 +44,21 @@ CREATE TABLE IF NOT EXISTS service_schedules (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_amc FOREIGN KEY (amc_id) REFERENCES amc_contracts(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- AMC Payments Table
+CREATE TABLE IF NOT EXISTS amc_payments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    amc_id BIGINT NOT NULL,
+    invoice_number VARCHAR(100) NOT NULL UNIQUE,
+    invoice_date DATE NOT NULL,
+    due_date DATE NOT NULL,
+    amount_due DECIMAL(12,2) NOT NULL,
+    amount_paid DECIMAL(12,2) NOT NULL DEFAULT 0.00,
+    paid_date DATE,
+    payment_method VARCHAR(100),
+    notes TEXT,
+    status VARCHAR(50) NOT NULL DEFAULT 'UNPAID',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_payment_amc FOREIGN KEY (amc_id) REFERENCES amc_contracts(id) ON DELETE CASCADE
+) ENGINE=InnoDB;
