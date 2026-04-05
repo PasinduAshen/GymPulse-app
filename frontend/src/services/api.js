@@ -52,6 +52,22 @@ export const amcService = {
   },
   completeService: (id, notes) => api.post(`/amc/schedules/${id}/complete`, { notes }),
   getServiceHistory: (amcId) => api.get(`/amc/contracts/${amcId}/history`),
+  createInvoice: (amcId, data) => api.post(`/amc/${amcId}/payments/invoice`, data),
+  recordPayment: (paymentId, data) => api.post(`/amc/payments/${paymentId}/receive`, data),
+  getPayments: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.status && filters.status !== 'All') params.append('status', filters.status);
+    if (filters.machineName) params.append('machineName', filters.machineName);
+    if (filters.brand) params.append('brand', filters.brand);
+    if (filters.dueFrom) params.append('dueFrom', filters.dueFrom);
+    if (filters.dueTo) params.append('dueTo', filters.dueTo);
+    if (filters.outstandingOnly) params.append('outstandingOnly', 'true');
+
+    const query = params.toString();
+    return api.get(`/amc/payments${query ? `?${query}` : ''}`);
+  },
+  getOutstandingPayments: () => api.get('/amc/payments/outstanding'),
+  getAmcPayments: (amcId) => api.get(`/amc/${amcId}/payments`),
 };
 
 export default api;

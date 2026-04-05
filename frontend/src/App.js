@@ -7,6 +7,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import AmcDetails from './pages/AmcDetails';
 import Services from './pages/Services';
+import Payments from './pages/Payments';
 import Sidebar from './components/Sidebar';
 import Topbar from './components/Topbar';
 
@@ -47,6 +48,11 @@ function App() {
         <Route path="/services" element={
           <PrivateRoute>
             <Services />
+          </PrivateRoute>
+        } />
+        <Route path="/payments" element={
+          <PrivateRoute>
+            <Payments />
           </PrivateRoute>
         } />
         <Route path="/" element={<Navigate to="/dashboard" />} />
