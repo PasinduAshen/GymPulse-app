@@ -170,8 +170,8 @@ const Payments = () => {
         </label>
       </div>
 
-      <div className="card" style={{ marginBottom: '1rem' }}>
-        <div className="details-grid">
+      <div className="card payments-filters-card" style={{ marginBottom: '1rem' }}>
+        <div className="details-grid payments-filters-grid">
           <div className="form-group">
             <label>Status</label>
             <select value={filters.status} onChange={(e) => setFilters((prev) => ({ ...prev, status: e.target.value }))}>
@@ -352,6 +352,28 @@ const Payments = () => {
       )}
 
       <style>{`
+        .payments-filters-card {
+          padding: 1rem 1rem 0.5rem;
+        }
+        .payments-filters-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 0.75rem 1rem;
+        }
+        .payments-filters-card .form-group {
+          margin-bottom: 0.75rem;
+        }
+        .payments-filters-card .form-group label {
+          margin-bottom: 0.35rem;
+          font-size: 0.82rem;
+        }
+        .payments-filters-card .form-group input,
+        .payments-filters-card .form-group select {
+          padding: 0.65rem 0.85rem;
+          font-size: 0.93rem;
+          border-radius: 0.6rem;
+        }
+
         .modal-overlay {
           position: fixed;
           top: 0;
