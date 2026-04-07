@@ -70,6 +70,18 @@ const Payments = () => {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    const isAnyModalOpen = showInvoiceModal || showReceiveModal;
+    if (!isAnyModalOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [showInvoiceModal, showReceiveModal]);
+
   const totalOutstanding = useMemo(
     () => payments.reduce((sum, p) => sum + Number(p.outstandingAmount || 0), 0).toFixed(2),
     [payments]
@@ -348,17 +360,28 @@ const Payments = () => {
           bottom: 0;
           background: rgba(0, 0, 0, 0.5);
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           justify-content: center;
           z-index: 1000;
           backdrop-filter: blur(3px);
+          overflow-y: auto;
+          padding: 1rem;
         }
         .modal-content {
           background: #fff;
           border-radius: 12px;
           width: 92%;
           overflow: hidden;
+          max-height: calc(100vh - 2rem);
+          display: flex;
+          flex-direction: column;
           box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
+        }
+        .modal-content form {
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          min-height: 0;
         }
         .modal-header {
           padding: 1.25rem 1.5rem;
@@ -376,6 +399,8 @@ const Payments = () => {
         }
         .modal-body {
           padding: 1.25rem 1.5rem;
+          overflow-y: auto;
+          min-height: 0;
         }
         .modal-footer {
           padding: 1rem 1.5rem;
