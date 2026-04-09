@@ -1,6 +1,7 @@
 package com.gympulse.app.model;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -26,6 +27,13 @@ public class Machine {
 
     @Column(name = "serial_number")
     private String serialNumber;
+
+    // ✅ Added: category field
+    private String category;
+
+    // ✅ Added: purchaseDate field
+    @Column(name = "purchase_date")
+    private LocalDate purchaseDate;
 
     @Column(nullable = false)
     private String status = "ACTIVE";
@@ -68,6 +76,12 @@ public class Machine {
 
     public String getSerialNumber() { return serialNumber; }
     public void setSerialNumber(String serialNumber) { this.serialNumber = serialNumber; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
+    public LocalDate getPurchaseDate() { return purchaseDate; }
+    public void setPurchaseDate(LocalDate purchaseDate) { this.purchaseDate = purchaseDate; }
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
