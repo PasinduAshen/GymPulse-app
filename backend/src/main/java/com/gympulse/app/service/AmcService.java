@@ -178,33 +178,53 @@ public class AmcService {
     }
 
     public List<AmcContract> getAmcsByAdmin(String userEmail) {
-        Admin admin = adminRepository.findByEmail(userEmail)
+        adminRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Admin account not found."));
-        return amcContractRepository.findByAdminId(admin.getId());
+        return amcContractRepository.findAll();
     }
 
     public List<ServiceSchedule> getSchedulesByAdmin(String userEmail) {
-        Admin admin = adminRepository.findByEmail(userEmail)
+        adminRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Admin account not found."));
-        return serviceScheduleRepository.findByAdminId(admin.getId());
+        return serviceScheduleRepository.findAllWithContract();
     }
 
-    public List<ServiceSchedule> filterSchedules(String userEmail, ServiceStatus status, String machineName, String brand, LocalDate startDate, LocalDate endDate) {
-        Admin admin = adminRepository.findByEmail(userEmail)
+        public List<ServiceSchedule> filterSchedules(String userEmail,
+                             ServiceStatus status,
+                             String machineName,
+                             String brand,
+                             String companyName,
+                             LocalDate startDate,
+                             LocalDate endDate) {
+        adminRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Admin account not found."));
-        return serviceScheduleRepository.filterSchedules(admin.getId(), status, machineName, brand, startDate, endDate);
+
+        return serviceScheduleRepository.findAllWithContract().stream()
+            .filter(schedule -> status == null || schedule.getStatus() == status)
+            .filter(schedule -> machineName == null || machineName.isBlank() ||
+                (schedule.getAmcContract() != null &&
+                 schedule.getAmcContract().getMachineName() != null &&
+                 schedule.getAmcContract().getMachineName().toLowerCase().contains(machineName.toLowerCase())))
+            .filter(schedule -> brand == null || brand.isBlank() ||
+                (schedule.getAmcContract() != null &&
+                 schedule.getAmcContract().getBrand() != null &&
+                 schedule.getAmcContract().getBrand().toLowerCase().contains(brand.toLowerCase())))
+            .filter(schedule -> companyName == null || companyName.isBlank() ||
+                (schedule.getAmcContract() != null &&
+                 schedule.getAmcContract().getCompanyName() != null &&
+                 schedule.getAmcContract().getCompanyName().toLowerCase().contains(companyName.toLowerCase())))
+            .filter(schedule -> startDate == null || !schedule.getScheduledDate().isBefore(startDate))
+            .filter(schedule -> endDate == null || !schedule.getScheduledDate().isAfter(endDate))
+            .sorted(Comparator.comparing(ServiceSchedule::getScheduledDate))
+            .toList();
     }
 
     public List<ServiceSchedule> getServiceHistory(Long amcId, String userEmail) {
-        Admin admin = adminRepository.findByEmail(userEmail)
+        adminRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Admin account not found."));
         
         AmcContract contract = amcContractRepository.findById(amcId)
                 .orElseThrow(() -> new RuntimeException("Contract not found with ID: " + amcId));
-
-        if (!contract.getAdmin().getId().equals(admin.getId())) {
-            throw new RuntimeException("Unauthorized access to contract history.");
-        }
 
         return serviceScheduleRepository.findHistoryByAmcId(amcId);
     }
@@ -214,15 +234,16 @@ public class AmcService {
         Admin admin = adminRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("Admin account not found."));
 
+        String role = admin.getRole() == null ? "" : admin.getRole();
+        if (!"ADMIN".equalsIgnoreCase(role) && !"MANAGER".equalsIgnoreCase(role)) {
+            throw new RuntimeException("Unauthorized: You cannot complete services.");
+        }
+
         ServiceSchedule schedule = serviceScheduleRepository.findById(serviceId)
                 .orElseThrow(() -> new RuntimeException("Service schedule not found with ID: " + serviceId));
 
-        if (!schedule.getAmcContract().getAdmin().getId().equals(admin.getId())) {
-            throw new RuntimeException("Unauthorized: This service schedule does not belong to you.");
-        }
-
         if (ServiceStatus.COMPLETED.equals(schedule.getStatus())) {
-            throw new RuntimeException("Service is already marked as completed.");
+            return schedule;
         }
 
         schedule.setStatus(ServiceStatus.COMPLETED);

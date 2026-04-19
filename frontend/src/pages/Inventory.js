@@ -4,8 +4,11 @@ import MachineGrid from '../components/inventory/MachineGrid';
 import SparePartList from '../components/inventory/SparePartList';
 import AddMachineModal from '../components/inventory/AddMachineModal';
 import AddSparePartModal from '../components/inventory/AddSparePartModal';
+import { getUserRole } from '../utils/auth';
 
 const Inventory = () => {
+  const role = getUserRole();
+  const canEditInventory = role === 'ADMIN' || role === 'MANAGER';
   const [activeTab, setActiveTab] = useState('machines');
   const [stats, setStats] = useState({ totalMachines: 0, totalSpareParts: 0, lowStockCount: 0 });
   const [showAddMachine, setShowAddMachine] = useState(false);
@@ -29,28 +32,30 @@ const Inventory = () => {
   return (
     <div style={{ padding: '32px 36px', minHeight: '100vh', background: '#f8fafc' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '28px' }}>
+      <div className="page-hero" style={{ marginBottom: '1.25rem' }}>
         <div>
-          <h1 style={{ fontSize: '26px', fontWeight: '700', color: '#0f172a', margin: 0 }}>
-            Inventory Management
-          </h1>
-          <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '14px' }}>
-            View and manage all your gym equipment in stock.
-          </p>
+          <span className="hero-pill">Stock Command</span>
+          <h1>Inventory Management</h1>
+          <p>View and manage all your gym equipment in stock.</p>
         </div>
-        <button
-          onClick={() => activeTab === 'machines' ? setShowAddMachine(true) : setShowAddSparePart(true)}
-          style={{
-            background: '#2563eb', color: 'white', border: 'none', borderRadius: '8px',
-            padding: '10px 20px', cursor: 'pointer', fontWeight: '600', fontSize: '14px',
-            display: 'flex', alignItems: 'center', gap: '6px',
-          }}
-        >
-          <span style={{ fontSize: '18px', lineHeight: 1 }}>+</span>
-          {activeTab === 'machines' ? 'Add Machine' : 'Add Spare Part'}
-        </button>
+        {canEditInventory && (
+          <div className="hero-actions">
+            <button
+              className="btn btn-primary"
+              onClick={() => activeTab === 'machines' ? setShowAddMachine(true) : setShowAddSparePart(true)}
+            >
+              <span style={{ fontSize: '18px', lineHeight: 1 }}>+</span>
+              {activeTab === 'machines' ? 'Add Machine' : 'Add Spare Part'}
+            </button>
+          </div>
+        )}
       </div>
+
+      {!canEditInventory && (
+        <div className="data-card" style={{ marginBottom: '1rem', padding: '0.75rem 1rem', border: '1px solid #bfdbfe' }}>
+          Inventory is in read-only mode for your role. Only Admin or Manager can add, edit, delete, or adjust stock.
+        </div>
+      )}
 
       {/* Stats Row */}
       <div style={{ display: 'flex', gap: '16px', marginBottom: '28px' }}>
@@ -90,8 +95,8 @@ const Inventory = () => {
 
       {/* Content */}
       {activeTab === 'machines'
-        ? <MachineGrid key={`machines-${refreshKey}`} onEdit={() => setRefreshKey(k => k + 1)} />
-        : <SparePartList key={`parts-${refreshKey}`} onEdit={() => setRefreshKey(k => k + 1)} />
+        ? <MachineGrid key={`machines-${refreshKey}`} onEdit={() => setRefreshKey(k => k + 1)} canEdit={canEditInventory} />
+        : <SparePartList key={`parts-${refreshKey}`} onEdit={() => setRefreshKey(k => k + 1)} canEdit={canEditInventory} />
       }
 
       {/* Modals */}

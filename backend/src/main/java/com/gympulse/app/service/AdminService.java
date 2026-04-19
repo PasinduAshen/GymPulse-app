@@ -8,8 +8,6 @@ import com.gympulse.app.repository.AdminRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
-
 @Service
 public class AdminService {
     private final AdminRepository adminRepository;
@@ -17,7 +15,10 @@ public class AdminService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
 
-    public AdminService(AdminRepository adminRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil, EmailService emailService) {
+    public AdminService(AdminRepository adminRepository,
+                        PasswordEncoder passwordEncoder,
+                        JwtUtil jwtUtil,
+                        EmailService emailService) {
         this.adminRepository = adminRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
@@ -92,6 +93,7 @@ public class AdminService {
         admin.setUsername(request.getUsername());
         admin.setEmail(request.getEmail());
         admin.setPassword(passwordEncoder.encode(request.getPassword()));
+        admin.setRole("USER");
 
         return adminRepository.save(admin);
     }
@@ -106,6 +108,7 @@ public class AdminService {
             throw new RuntimeException("Invalid credentials");
         }
 
-        return jwtUtil.generateToken(admin.getEmail(), admin.getRole());
+        String role = admin.getRole() == null ? "USER" : admin.getRole().toUpperCase();
+        return jwtUtil.generateToken(admin.getEmail(), role);
     }
 }

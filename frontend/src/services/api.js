@@ -31,6 +31,14 @@ export const authService = {
   logout: () => localStorage.removeItem('token'),
 };
 
+export const managerInviteService = {
+  createInvite: (data) => api.post('/admin/manager-invites', data),
+  listInvites: () => api.get('/admin/manager-invites'),
+  revokeInvite: (id) => api.post(`/admin/manager-invites/${id}/revoke`),
+  validateInvite: (token) => api.get('/invites/validate', { params: { token } }),
+  acceptInvite: (data) => api.post('/invites/accept', data),
+};
+
 // ================= AMC SERVICE =================
 export const amcService = {
   uploadPdf: (formData) =>
@@ -44,8 +52,7 @@ export const amcService = {
     const params = new URLSearchParams();
     if (filters.status && filters.status !== 'All')
       params.append('status', filters.status.toUpperCase());
-    if (filters.machineName) params.append('machineName', filters.machineName);
-    if (filters.brand) params.append('brand', filters.brand);
+    if (filters.companyName) params.append('companyName', filters.companyName);
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
     const query = params.toString();
@@ -61,8 +68,7 @@ export const amcService = {
   getPayments: (filters = {}) => {
     const params = new URLSearchParams();
     if (filters.status && filters.status !== 'All') params.append('status', filters.status);
-    if (filters.machineName) params.append('machineName', filters.machineName);
-    if (filters.brand) params.append('brand', filters.brand);
+    if (filters.companyName) params.append('companyName', filters.companyName);
     if (filters.dueFrom) params.append('dueFrom', filters.dueFrom);
     if (filters.dueTo) params.append('dueTo', filters.dueTo);
     if (filters.outstandingOnly) params.append('outstandingOnly', 'true');

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { amcService, authService } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { hasAnyRole } from '../utils/auth';
 
 const initialInvoiceState = {
   amcId: '',
@@ -20,6 +21,7 @@ const initialReceiveState = {
 };
 
 const Payments = () => {
+  const canManagePayments = hasAnyRole(['ADMIN', 'MANAGER']);
   const navigate = useNavigate();
   const [payments, setPayments] = useState([]);
   const [amcs, setAmcs] = useState([]);
@@ -28,8 +30,7 @@ const Payments = () => {
 
   const [filters, setFilters] = useState({
     status: 'All',
-    machineName: '',
-    brand: '',
+    companyName: '',
     dueFrom: '',
     dueTo: '',
     outstandingOnly: false,
@@ -82,9 +83,18 @@ const Payments = () => {
     };
   }, [showInvoiceModal, showReceiveModal]);
 
+  const filteredPayments = useMemo(() => {
+    const term = (filters.companyName || '').trim().toLowerCase();
+    if (!term) return payments;
+
+    return payments.filter((payment) =>
+      (payment.companyName || '').toLowerCase().includes(term)
+    );
+  }, [payments, filters.companyName]);
+
   const totalOutstanding = useMemo(
-    () => payments.reduce((sum, p) => sum + Number(p.outstandingAmount || 0), 0).toFixed(2),
-    [payments]
+    () => filteredPayments.reduce((sum, p) => sum + Number(p.outstandingAmount || 0), 0).toFixed(2),
+    [filteredPayments]
   );
 
   const handleInvoiceSubmit = async (e) => {
@@ -143,17 +153,20 @@ const Payments = () => {
 
   return (
     <>
-      <div className="page-header">
-        <div className="page-title">
+      <div className="page-hero">
+        <div>
+          <span className="hero-pill">Finance Control</span>
           <h1>AMC Payments</h1>
-          <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+          <p>
             Record received payments and track outstanding invoices.
           </p>
         </div>
-        <button className="btn-add" onClick={() => setShowInvoiceModal(true)}>
-          <svg style={{ width: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-          Create Invoice
-        </button>
+        <div className="hero-actions">
+          <button className="btn btn-primary" onClick={() => setShowInvoiceModal(true)}>
+            <svg style={{ width: '20px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+            {canManagePayments ? 'Create Invoice' : 'Read Only'}
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -183,12 +196,8 @@ const Payments = () => {
             </select>
           </div>
           <div className="form-group">
-            <label>Machine</label>
-            <input value={filters.machineName} onChange={(e) => setFilters((prev) => ({ ...prev, machineName: e.target.value }))} />
-          </div>
-          <div className="form-group">
-            <label>Brand</label>
-            <input value={filters.brand} onChange={(e) => setFilters((prev) => ({ ...prev, brand: e.target.value }))} />
+            <label>Company</label>
+            <input value={filters.companyName} onChange={(e) => setFilters((prev) => ({ ...prev, companyName: e.target.value }))} />
           </div>
           <div className="form-group">
             <label>Due From</label>
@@ -209,7 +218,7 @@ const Payments = () => {
             <thead>
               <tr>
                 <th>Invoice #</th>
-                <th>Machine</th>
+                <th>Company</th>
                 <th>Due Date</th>
                 <th>Amount Due</th>
                 <th>Paid</th>
@@ -223,15 +232,15 @@ const Payments = () => {
                 <tr>
                   <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>Loading payments...</td>
                 </tr>
-              ) : payments.length === 0 ? (
+              ) : filteredPayments.length === 0 ? (
                 <tr>
                   <td colSpan="8" style={{ textAlign: 'center', padding: '2rem' }}>No payment records found.</td>
                 </tr>
               ) : (
-                payments.map((p) => (
+                filteredPayments.map((p) => (
                   <tr key={p.id}>
                     <td>{p.invoiceNumber}</td>
-                    <td>{p.machineName || 'N/A'}</td>
+                    <td>{p.companyName || 'N/A'}</td>
                     <td>{p.dueDate}</td>
                     <td>LKR {Number(p.amountDue || 0).toFixed(2)}</td>
                     <td>LKR {Number(p.amountPaid || 0).toFixed(2)}</td>
@@ -248,10 +257,10 @@ const Payments = () => {
                     <td>
                       <button
                         className="btn btn-primary btn-small"
-                        disabled={p.status === 'PAID'}
+                        disabled={p.status === 'PAID' || !canManagePayments}
                         onClick={() => openReceiveModal(p.id)}
                       >
-                        Record Payment
+                        {canManagePayments ? 'Record Payment' : 'Read Only'}
                       </button>
                     </td>
                   </tr>
@@ -262,7 +271,7 @@ const Payments = () => {
         </div>
       </div>
 
-      {showInvoiceModal && (
+      {showInvoiceModal && canManagePayments && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '560px' }}>
             <div className="modal-header">
@@ -277,7 +286,7 @@ const Payments = () => {
                     <option value="">Select AMC Contract</option>
                     {amcs.map((amc) => (
                       <option key={amc.id} value={amc.id}>
-                        {amc.machineName || 'Unknown'} ({amc.brand || 'N/A'})
+                        {amc.companyName || 'Unknown Company'}
                       </option>
                     ))}
                   </select>
@@ -314,7 +323,7 @@ const Payments = () => {
         </div>
       )}
 
-      {showReceiveModal && (
+      {showReceiveModal && canManagePayments && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '520px' }}>
             <div className="modal-header">

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { authService } from '../services/api';
 
 const Register = () => {
@@ -10,8 +11,6 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -22,20 +21,18 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      toast.error('Passwords do not match');
       return;
     }
-    
-    setError('');
-    setSuccess('');
+
     setIsLoading(true);
 
     try {
       await authService.register(formData);
-      setSuccess('Registration successful! Redirecting to login...');
+      toast.success('Registration successful! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed.');
+      toast.error(err.response?.data?.message || 'Registration failed.');
     } finally {
       setIsLoading(false);
     }
@@ -46,9 +43,9 @@ const Register = () => {
       <div className="auth-card">
         <div className="auth-logo">GymPulse</div>
         <h2 className="auth-title">Create Account</h2>
-        
-        {error && <div className="error-msg">{error}</div>}
-        {success && <div className="success-msg">{success}</div>}
+        <p style={{ marginTop: '-0.75rem', marginBottom: '1.25rem', color: '#64748b', fontSize: '0.85rem', textAlign: 'center' }}>
+          Register as a normal employee account. Manager accounts are created only through admin invite links.
+        </p>
         
         <form onSubmit={handleRegister}>
           <div className="form-group">

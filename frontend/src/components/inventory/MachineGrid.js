@@ -10,7 +10,7 @@ const STATUS_STYLES = {
 
 const CATEGORY_OPTIONS = ['All Categories', 'Cardio', 'Strength', 'Free Weights', 'Flexibility', 'Other'];
 
-const MachineGrid = ({ onEdit }) => {
+const MachineGrid = ({ onEdit, canEdit = false }) => {
   const [machines, setMachines] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editMachine, setEditMachine] = useState(null);
@@ -240,30 +240,36 @@ const MachineGrid = ({ onEdit }) => {
 
               {/* Action Buttons: Edit + Delete */}
               <div style={{ display: 'flex', gap: '8px', padding: '0 16px 16px' }}>
-                <button
-                  onClick={() => setEditMachine(machine)}
-                  style={{
-                    flex: 1, padding: '8px', border: '1px solid #e2e8f0',
-                    borderRadius: '8px', background: 'white', cursor: 'pointer',
-                    fontSize: '13px', fontWeight: '600', color: '#475569',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'white'; }}
-                >
-                  ✏️ Edit Details
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(machine)}
-                  style={{
-                    flex: 1, padding: '8px', border: '1px solid #fecaca',
-                    borderRadius: '8px', background: '#fef2f2', cursor: 'pointer',
-                    fontSize: '13px', fontWeight: '600', color: '#dc2626',
-                  }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; }}
-                >
-                  🗑️ Delete
-                </button>
+                {canEdit ? (
+                  <>
+                    <button
+                      onClick={() => setEditMachine(machine)}
+                      style={{
+                        flex: 1, padding: '8px', border: '1px solid #e2e8f0',
+                        borderRadius: '8px', background: 'white', cursor: 'pointer',
+                        fontSize: '13px', fontWeight: '600', color: '#475569',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#f8fafc'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'white'; }}
+                    >
+                      ✏️ Edit Details
+                    </button>
+                    <button
+                      onClick={() => setConfirmDelete(machine)}
+                      style={{
+                        flex: 1, padding: '8px', border: '1px solid #fecaca',
+                        borderRadius: '8px', background: '#fef2f2', cursor: 'pointer',
+                        fontSize: '13px', fontWeight: '600', color: '#dc2626',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#fee2e2'; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#fef2f2'; }}
+                    >
+                      🗑️ Delete
+                    </button>
+                  </>
+                ) : (
+                  <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>Read only</span>
+                )}
               </div>
             </div>
           );

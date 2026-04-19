@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { amcService } from '../services/api';
 
 const ServiceHistory = ({ amcId }) => {
@@ -6,13 +6,7 @@ const ServiceHistory = ({ amcId }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (amcId) {
-      fetchHistory();
-    }
-  }, [amcId]);
-
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
       const response = await amcService.getServiceHistory(amcId);
@@ -22,7 +16,19 @@ const ServiceHistory = ({ amcId }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [amcId]);
+
+  useEffect(() => {
+    if (amcId) {
+      fetchHistory();
+    }
+  }, [amcId, fetchHistory]);
+
+  const sortedHistory = [...history].sort((a, b) => {
+    const aDate = new Date(a.scheduledDate || 0).getTime();
+    const bDate = new Date(b.scheduledDate || 0).getTime();
+    return bDate - aDate;
+  });
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center', color: '#64748b' }}>Loading history...</div>;
   if (error) return <div className="error-msg">{error}</div>;
@@ -47,14 +53,14 @@ const ServiceHistory = ({ amcId }) => {
             </tr>
           </thead>
           <tbody>
-            {history.length === 0 ? (
+            {sortedHistory.length === 0 ? (
               <tr>
                 <td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
                   No service history available for this machine.
                 </td>
               </tr>
             ) : (
-              history.map(record => (
+              sortedHistory.map(record => (
                 <tr key={record.id}>
                   <td>
                     <strong>{record.scheduledDate}</strong>
@@ -67,7 +73,13 @@ const ServiceHistory = ({ amcId }) => {
                       {record.status}
                     </span>
                   </td>
-                  <td>{record.completedDate || '-'}</td>
+                  <td>
+                    {record.completedDate ? (
+                      <span style={{ color: '#166534', fontWeight: 600 }}>{record.completedDate}</span>
+                    ) : (
+                      <span style={{ color: '#94a3b8' }}>Not completed</span>
+                    )}
+                  </td>
                   <td style={{ maxWidth: '300px', fontSize: '0.875rem' }}>
                     {record.notes || <em style={{ color: '#94a3b8' }}>No notes provided</em>}
                   </td>

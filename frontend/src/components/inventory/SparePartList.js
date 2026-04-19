@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { inventoryService } from '../../services/api';
 
-const SparePartList = ({ onEdit }) => {
+const SparePartList = ({ onEdit, canEdit = false }) => {
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stockModal, setStockModal] = useState(null);
@@ -156,22 +156,28 @@ const SparePartList = ({ onEdit }) => {
                 </td>
                 <td style={{ padding: '10px 16px' }}>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button onClick={() => { setStockModal({ part: p, type: 'in' }); setStockQty(1); }}
-                      style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
-                      + In
-                    </button>
-                    <button onClick={() => { setStockModal({ part: p, type: 'out' }); setStockQty(1); }}
-                      style={{ background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
-                      − Out
-                    </button>
-                    <button onClick={() => openEdit(p)}
-                      style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
-                      Edit
-                    </button>
-                    <button onClick={() => handleDelete(p.id)}
-                      style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
-                      Del
-                    </button>
+                    {canEdit ? (
+                      <>
+                        <button onClick={() => { setStockModal({ part: p, type: 'in' }); setStockQty(1); }}
+                          style={{ background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                          + In
+                        </button>
+                        <button onClick={() => { setStockModal({ part: p, type: 'out' }); setStockQty(1); }}
+                          style={{ background: '#fff7ed', color: '#ea580c', border: '1px solid #fed7aa', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                          − Out
+                        </button>
+                        <button onClick={() => openEdit(p)}
+                          style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                          Edit
+                        </button>
+                        <button onClick={() => handleDelete(p.id)}
+                          style={{ background: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '6px', padding: '5px 10px', cursor: 'pointer', fontSize: '12px', fontWeight: '700' }}>
+                          Del
+                        </button>
+                      </>
+                    ) : (
+                      <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>Read only</span>
+                    )}
                   </div>
                 </td>
               </tr>

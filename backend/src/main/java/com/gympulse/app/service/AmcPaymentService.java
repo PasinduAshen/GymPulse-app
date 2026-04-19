@@ -41,7 +41,8 @@ public class AmcPaymentService {
         AmcContract contract = amcContractRepository.findById(amcId)
                 .orElseThrow(() -> new RuntimeException("AMC contract not found."));
 
-        if (!contract.getAdmin().getId().equals(admin.getId())) {
+        String role = admin.getRole() == null ? "" : admin.getRole();
+        if (!"ADMIN".equalsIgnoreCase(role) && !"MANAGER".equalsIgnoreCase(role)) {
             throw new RuntimeException("Unauthorized access to this AMC contract.");
         }
 
@@ -76,7 +77,12 @@ public class AmcPaymentService {
     @Transactional
     public AmcPaymentDto recordPayment(Long paymentId, RecordPaymentRequest request, String userEmail) {
         Admin admin = findAdmin(userEmail);
-        AmcPayment payment = amcPaymentRepository.findOwnedPayment(paymentId, admin.getId())
+        String role = admin.getRole() == null ? "" : admin.getRole();
+        if (!"ADMIN".equalsIgnoreCase(role) && !"MANAGER".equalsIgnoreCase(role)) {
+            throw new RuntimeException("Unauthorized access to payment record.");
+        }
+
+        AmcPayment payment = amcPaymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("Payment record not found."));
 
         if (request.getAmountReceived() == null || request.getAmountReceived().compareTo(BigDecimal.ZERO) <= 0) {
@@ -105,12 +111,19 @@ public class AmcPaymentService {
                                            PaymentStatus status,
                                            String machineName,
                                            String brand,
+                                           String companyName,
                                            LocalDate dueFrom,
                                            LocalDate dueTo,
                                            boolean outstandingOnly) {
         Admin admin = findAdmin(userEmail);
 
-        return amcPaymentRepository.findByAdminId(admin.getId()).stream()
+        if (admin.getRole() == null || "".equals(admin.getRole().trim())) {
+            throw new RuntimeException("Invalid user role.");
+        }
+
+        List<AmcPayment> basePayments = amcPaymentRepository.findAll();
+
+        return basePayments.stream()
                 .peek(this::refreshStatusIfNeeded)
                 .filter(p -> status == null || p.getStatus() == status)
                 .filter(p -> !outstandingOnly || p.getStatus() != PaymentStatus.PAID)
@@ -122,6 +135,10 @@ public class AmcPaymentService {
                         (p.getAmcContract().getBrand() != null &&
                                 p.getAmcContract().getBrand().toLowerCase(Locale.ROOT)
                                         .contains(brand.toLowerCase(Locale.ROOT))))
+                .filter(p -> companyName == null || companyName.isBlank() ||
+                    (p.getAmcContract().getCompanyName() != null &&
+                        p.getAmcContract().getCompanyName().toLowerCase(Locale.ROOT)
+                            .contains(companyName.toLowerCase(Locale.ROOT))))
                 .filter(p -> dueFrom == null || !p.getDueDate().isBefore(dueFrom))
                 .filter(p -> dueTo == null || !p.getDueDate().isAfter(dueTo))
                 .sorted(Comparator.comparing(AmcPayment::getDueDate).reversed())
@@ -131,14 +148,15 @@ public class AmcPaymentService {
 
     @Transactional
     public List<AmcPaymentDto> getOutstandingPayments(String userEmail) {
-        return getPayments(userEmail, null, null, null, null, null, true);
+        return getPayments(userEmail, null, null, null, null, null, null, true);
     }
 
     @Transactional
     public List<AmcPaymentDto> getPaymentsByAmc(Long amcId, String userEmail) {
-        Admin admin = findAdmin(userEmail);
+        findAdmin(userEmail);
 
-        return amcPaymentRepository.findByAdminIdAndAmcId(admin.getId(), amcId).stream()
+        return amcPaymentRepository.findAll().stream()
+            .filter(payment -> payment.getAmcContract() != null && payment.getAmcContract().getId().equals(amcId))
                 .peek(this::refreshStatusIfNeeded)
                 .map(this::toDto)
                 .collect(Collectors.toList());

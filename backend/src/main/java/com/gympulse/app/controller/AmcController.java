@@ -85,14 +85,15 @@ public class AmcController {
             @RequestParam(required = false) ServiceStatus status,
             @RequestParam(required = false) String machineName,
             @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String companyName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         
-        if (status != null || machineName != null || brand != null || startDate != null || endDate != null) {
-            return new ResponseEntity<>(amcService.filterSchedules(userEmail, status, machineName, brand, startDate, endDate), HttpStatus.OK);
+        if (status != null || machineName != null || brand != null || companyName != null || startDate != null || endDate != null) {
+            return new ResponseEntity<>(amcService.filterSchedules(userEmail, status, machineName, brand, companyName, startDate, endDate), HttpStatus.OK);
         }
         
         return new ResponseEntity<>(amcService.getSchedulesByAdmin(userEmail), HttpStatus.OK);

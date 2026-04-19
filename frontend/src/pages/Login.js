@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { authService } from '../services/api';
+import { getDefaultRouteByRole, getRoleFromToken } from '../utils/auth';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
     try {
       const response = await authService.login({ email, password });
-      localStorage.setItem('token', response.data.token);
-      navigate('/dashboard');
+      const token = response.data.token;
+      localStorage.setItem('token', token);
+      toast.success('Login successful');
+
+      const role = getRoleFromToken(token);
+      navigate(getDefaultRouteByRole(role));
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
+      toast.error(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -29,8 +33,6 @@ const Login = () => {
       <div className="auth-card">
         <div className="auth-logo">GymPulse</div>
         <h2 className="auth-title">Welcome Back</h2>
-        
-        {error && <div className="error-msg">{error}</div>}
         
         <form onSubmit={handleLogin}>
           <div className="form-group">
