@@ -1,0 +1,42 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    
+    {
+      "type": "java",
+      "name": "Spring Boot-GymPulse Backend",
+      "request": "launch",
+      "mainClass": "com.gympulse.app.AppApplication",
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "DB_USERNAME": "root",
+        "DB_PASSWORD": "Pasinduashen25.",
+        "JWT_SECRET": "YaF3Hm43R7gY55Mg+LET8TgACkkMEdtN7uh6Ez8fqIc=",
+        "LLM_API_KEY": "AIzaSyBMqqe5OdsLfDsTnT9oFC5vjZJAOQLkkwo",
+        "MAIL_USERNAME": "dilankadineth@gmail.com",
+        "MAIL_PASSWORD": "rxjw hqan jtgy ycon",
+        "BOOTSTRAP_ADMIN_ENABLED": "false",
+        "BOOTSTRAP_ADMIN_NAME": "System Admin",
+        "BOOTSTRAP_ADMIN_USERNAME": "admin",
+        "BOOTSTRAP_ADMIN_EMAIL": "admin@company.com",
+        "BOOTSTRAP_ADMIN_PASSWORD": "Admin@1234"
+      }
+    },
+    {
+      "type": "node-terminal",
+      "name": "React Frontend",
+      "request": "launch",
+      "command": "npm start",
+      "cwd": "${workspaceFolder}/frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Run Full Stack",
+      "configurations": [
+        "Spring Boot-GymPulse Backend",
+        "React Frontend"
+      ]
+    }
+  ]
+}

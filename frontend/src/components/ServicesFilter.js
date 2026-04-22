@@ -26,26 +26,13 @@ const ServicesFilter = ({ filters, setFilters, onReset }) => {
         </div>
 
         <div className="form-group" style={{ marginBottom: 0 }}>
-          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Machine Name</label>
+          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Company Name</label>
           <input 
             type="text" 
-            name="machineName" 
-            value={filters.machineName} 
+            name="companyName" 
+            value={filters.companyName} 
             onChange={handleChange} 
-            placeholder="Search machine..."
-            className="form-input"
-            style={{ marginTop: '0.25rem' }}
-          />
-        </div>
-
-        <div className="form-group" style={{ marginBottom: 0 }}>
-          <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.025em' }}>Brand</label>
-          <input 
-            type="text" 
-            name="brand" 
-            value={filters.brand} 
-            onChange={handleChange} 
-            placeholder="Search brand..."
+            placeholder="Search company..."
             className="form-input"
             style={{ marginTop: '0.25rem' }}
           />

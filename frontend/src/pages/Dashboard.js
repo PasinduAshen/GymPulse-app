@@ -1,182 +1,350 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { amcService, authService } from '../services/api';
+import { amcService, authService, inventoryService } from '../services/api';
 
 const Dashboard = () => {
   const [amcs, setAmcs] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('All');
+  const [schedules, setSchedules] = useState([]);
+  const [payments, setPayments] = useState([]);
+  const [inventoryStats, setInventoryStats] = useState({
+    totalMachines: 0,
+    totalSpareParts: 0,
+    lowStockCount: 0,
+    categoriesCount: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchAmcs();
-  }, []);
-
-  const fetchAmcs = async () => {
+  const fetchDashboardData = useCallback(async () => {
+    setLoading(true);
+    setError('');
     try {
-      const response = await amcService.getAmcs();
-      setAmcs(response.data);
+      const [amcRes, schedulesRes, paymentRes, inventoryStatsRes, machinesRes] = await Promise.all([
+        amcService.getAmcs(),
+        amcService.getSchedules(),
+        amcService.getPayments(),
+        inventoryService.getStats(),
+        inventoryService.getMachines(),
+      ]);
+
+      setAmcs(amcRes.data || []);
+      setSchedules(schedulesRes.data || []);
+      setPayments(paymentRes.data || []);
+
+      const machines = machinesRes.data || [];
+      const categoriesCount = new Set(
+        machines
+          .map((item) => (item.category || '').trim())
+          .filter((item) => item.length > 0)
+      ).size;
+
+      setInventoryStats({
+        totalMachines: inventoryStatsRes.data?.totalMachines || 0,
+        totalSpareParts: inventoryStatsRes.data?.totalSpareParts || 0,
+        lowStockCount: inventoryStatsRes.data?.lowStockCount || 0,
+        categoriesCount,
+      });
     } catch (err) {
       if (err.response?.status === 403 || err.response?.status === 401) {
         authService.logout();
         navigate('/login');
+        return;
       }
-    }
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    setLoading(true);
-    setError('');
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const response = await amcService.uploadPdf(formData);
-      navigate(`/amc/${response.data}`); // Response data is just the ID
-    } catch (err) {
-      const msg = err.response?.data?.error || err.response?.data || err.message || 'Upload failed';
-      setError(typeof msg === 'object' ? JSON.stringify(msg) : msg);
+      setError('Failed to load dashboard data.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
-  const triggerFileInput = () => {
-    fileInputRef.current.click();
-  };
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
-  const filteredAmcs = amcs.filter(amc => {
-    const matchesSearch = 
-      amc.machineName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      amc.brand?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = 
-      filterStatus === 'All' || 
-      amc.status === filterStatus.toUpperCase();
-    
-    return matchesSearch && matchesFilter;
-  });
+  const dashboardStats = useMemo(() => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+
+    const parseDate = (value) => {
+      if (!value) return null;
+      const parsed = new Date(value);
+      if (Number.isNaN(parsed.getTime())) return null;
+      return parsed;
+    };
+
+    const dueThisMonth = schedules.filter((item) => {
+      const date = parseDate(item.scheduledDate);
+      return date && date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+    }).length;
+
+    const overdueServices = schedules.filter((item) => item.status === 'OVERDUE').length;
+
+    const amcExpiringSoon = amcs.filter((item) => {
+      const endDate = parseDate(item.endDate);
+      if (!endDate) return false;
+      const diffDays = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      return diffDays >= 0 && diffDays <= 30;
+    }).length;
+
+    const outstandingPayments = payments.filter((payment) => {
+      const status = payment.status;
+      return status === 'UNPAID' || status === 'PARTIALLY_PAID' || status === 'OVERDUE';
+    }).length;
+
+    return {
+      dueThisMonth,
+      overdueServices,
+      amcExpiringSoon,
+      outstandingPayments,
+    };
+  }, [amcs, schedules, payments]);
+
+  const upcomingServices = useMemo(() => {
+    const today = new Date();
+    return schedules
+      .filter((item) => item.status !== 'COMPLETED' && item.scheduledDate)
+      .map((item) => ({
+        ...item,
+        parsedDate: new Date(item.scheduledDate),
+      }))
+      .filter((item) => !Number.isNaN(item.parsedDate.getTime()) && item.parsedDate >= today)
+      .sort((a, b) => a.parsedDate - b.parsedDate)
+      .slice(0, 10);
+  }, [schedules]);
+
+  const dashboardHealth = useMemo(() => {
+    const completedServices = schedules.filter((item) => item.status === 'COMPLETED').length;
+    const totalServices = schedules.length;
+    const completionRate = totalServices > 0
+      ? Math.round((completedServices / totalServices) * 100)
+      : 0;
+
+    const activeAmcs = amcs.filter((item) => item.status === 'ACTIVE').length;
+    const healthyPayments = payments.filter((item) => item.status === 'PAID').length;
+    const paymentCoverage = payments.length > 0
+      ? Math.round((healthyPayments / payments.length) * 100)
+      : 0;
+
+    return {
+      completedServices,
+      totalServices,
+      completionRate,
+      activeAmcs,
+      paymentCoverage,
+    };
+  }, [amcs, schedules, payments]);
+
+  const statCards = [
+    {
+      key: 'due',
+      label: 'Services Due This Month',
+      value: dashboardStats.dueThisMonth,
+      helper: 'Scheduled workload this month',
+      tone: 'tone-primary',
+      accent: 'SV',
+    },
+    {
+      key: 'overdue',
+      label: 'Overdue Services',
+      value: dashboardStats.overdueServices,
+      helper: 'Needs immediate scheduling',
+      tone: 'tone-danger',
+      accent: 'OD',
+    },
+    {
+      key: 'expiring',
+      label: 'AMC Expiring Soon',
+      value: dashboardStats.amcExpiringSoon,
+      helper: 'Expiring within 30 days',
+      tone: 'tone-warning',
+      accent: 'AMC',
+    },
+    {
+      key: 'payments',
+      label: 'Outstanding Payments',
+      value: dashboardStats.outstandingPayments,
+      helper: 'Pending financial follow-up',
+      tone: 'tone-accent',
+      accent: 'PM',
+    },
+  ];
+
+  const healthSignals = [
+    {
+      label: 'Service Completion',
+      value: `${dashboardHealth.completionRate}%`,
+      progress: dashboardHealth.completionRate,
+      tone: 'primary',
+    },
+    {
+      label: 'Payment Coverage',
+      value: `${dashboardHealth.paymentCoverage}%`,
+      progress: dashboardHealth.paymentCoverage,
+      tone: 'accent',
+    },
+  ];
 
   return (
-    <>
-      <div className="page-header">
-        <div className="page-title">
-          <h1>AMC Management</h1>
+    <div className="dashboard-shell">
+      <section className="dashboard-hero">
+        <div>
+          <span className="hero-pill">Operations Command Center</span>
+          <h1>Dashboard</h1>
+          <p>
+            Track services, AMC health, and payments in one place with actionable status signals.
+          </p>
         </div>
-        <button className="btn-add" onClick={triggerFileInput} disabled={loading}>
-          <svg style={{width: '20px'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-          {loading ? 'Processing...' : 'Add Contract'}
-        </button>
-        <input 
-          type="file" 
-          ref={fileInputRef} 
-          style={{ display: 'none' }} 
-          accept=".pdf" 
-          onChange={handleFileUpload} 
-        />
-      </div>
-
-      <div className="controls-row">
-        <div className="search-wrapper">
-          <svg className="search-icon" style={{width: '18px'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-          <input 
-            type="text" 
-            className="search-input" 
-            placeholder="Search machine or brand..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="hero-actions">
+          <button className="btn btn-primary" onClick={() => navigate('/amc-management')}>
+            Open AMC Management
+          </button>
+          <button className="btn btn-outline" onClick={() => navigate('/services')}>
+            Review Services
+          </button>
         </div>
-        
-        <div className="filter-group">
-          {['All', 'Active', 'Expired'].map(status => (
-            <button 
-              key={status}
-              className={`filter-btn ${filterStatus === status ? 'active' : ''}`}
-              onClick={() => setFilterStatus(status)}
-            >
-              {status}
-            </button>
-          ))}
-        </div>
-      </div>
+      </section>
 
       {error && <div className="error-msg">{error}</div>}
 
-      <div className="data-card">
-        <div className="table-container">
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Machine</th>
-                <th>Brand</th>
-                <th>AMC Start</th>
-                <th>AMC End</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredAmcs.length === 0 ? (
+      {loading && (
+        <div className="data-card" style={{ padding: '1rem', marginBottom: '1.25rem' }}>
+          Loading dashboard data...
+        </div>
+      )}
+
+      <div className="summary-grid">
+        {statCards.map((card) => (
+          <article className={`summary-card ${card.tone}`} key={card.key}>
+            <div className="summary-card-top">
+              <div className="summary-card-label">{card.label}</div>
+              <span className="summary-accent">{card.accent}</span>
+            </div>
+            <div className="summary-card-value">{card.value}</div>
+            <div className="summary-card-helper">{card.helper}</div>
+          </article>
+        ))}
+      </div>
+
+      <div className="dashboard-grid">
+        <section className="data-card dashboard-table-card">
+          <div className="widget-header">
+            <h3>Upcoming Services</h3>
+            <button className="btn btn-outline btn-small" onClick={() => navigate('/services')}>
+              View All
+            </button>
+          </div>
+          <div className="table-container">
+            <table className="custom-table">
+              <thead>
                 <tr>
-                  <td colSpan="6" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
-                    No contracts found matching your criteria.
-                  </td>
+                  <th>Company</th>
+                  <th>Scheduled Date</th>
+                  <th>Status</th>
                 </tr>
-              ) : (
-                filteredAmcs.map(amc => (
-                  <tr key={amc.id}>
-                    <td>
-                      <div className="machine-cell">
-                        <span className="machine-name">{amc.machineName || 'Unknown Machine'}</span>
-                      </div>
-                    </td>
-                    <td>{amc.brand || amc.companyName || 'N/A'}</td>
-                    <td>{amc.startDate || 'N/A'}</td>
-                    <td>{amc.endDate || 'N/A'}</td>
-                    <td>
-                      <span className={`status-badge ${
-                        amc.status === 'ACTIVE' ? 'status-active' : 
-                        amc.status === 'EXPIRED' ? 'status-expired' : 
-                        amc.status === 'EXTRACTED' ? 'status-extracted' : 'status-pending'
-                      }`}>
-                        {amc.status || 'PENDING'}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="action-group">
-                        <button 
-                          className="btn btn-outline btn-small" 
-                          title="Edit" 
-                          onClick={() => navigate(`/amc/${amc.id}`)}
-                        >
-                          <svg style={{width: '16px'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                          Edit
-                        </button>
-                        <button 
-                          className="btn btn-primary btn-small" 
-                          title="Renew"
-                          disabled={amc.status === 'ACTIVE'}
-                          onClick={() => navigate(`/amc/${amc.id}`)}
-                        >
-                          <svg style={{width: '16px'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                          Renew
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {upcomingServices.length === 0 ? (
+                  <tr>
+                    <td colSpan="3" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+                      No upcoming services in the schedule.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  upcomingServices.map((service) => (
+                    <tr key={service.id} className="clickable-row" onClick={() => navigate('/services')}>
+                      <td>
+                        <div className="machine-cell">
+                          <span className="machine-name">{service.amcContract?.companyName || 'Unknown Company'}</span>
+                        </div>
+                      </td>
+                      <td>{service.scheduledDate || 'N/A'}</td>
+                      <td>
+                        <span className={`status-badge ${
+                          service.status === 'COMPLETED' ? 'status-active' :
+                          service.status === 'OVERDUE' ? 'status-expired' : 'status-pending'
+                        }`}>
+                          {service.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <aside className="data-card dashboard-insights-card">
+          <div className="widget-header widget-header-tight">
+            <h3>Operational Health</h3>
+          </div>
+          <div className="insights-body">
+            <div className="insight-highlights">
+              <div>
+                <div className="insight-number">{dashboardHealth.completedServices}</div>
+                <div className="insight-label">Completed Services</div>
+              </div>
+              <div>
+                <div className="insight-number">{dashboardHealth.activeAmcs}</div>
+                <div className="insight-label">Active AMCs</div>
+              </div>
+            </div>
+
+            <div className="signal-list">
+              {healthSignals.map((signal) => (
+                <div className="signal-row" key={signal.label}>
+                  <div className="signal-head">
+                    <span>{signal.label}</span>
+                    <strong>{signal.value}</strong>
+                  </div>
+                  <div className="signal-track">
+                    <div
+                      className={`signal-fill ${signal.tone}`}
+                      style={{ width: `${Math.max(0, Math.min(100, signal.progress))}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => navigate('/payments')}>
+              Open Payments Center
+            </button>
+
+            <section className="inventory-pulse-card">
+              <div className="inventory-pulse-title">Inventory Pulse</div>
+              <div className="inventory-pulse-grid">
+                <article className="inventory-pulse-item">
+                  <div className="inventory-pulse-label">Total machines</div>
+                  <div className="inventory-pulse-value">{inventoryStats.totalMachines}</div>
+                </article>
+                <article className="inventory-pulse-item">
+                  <div className="inventory-pulse-label">Spare parts</div>
+                  <div className="inventory-pulse-value">{inventoryStats.totalSpareParts}</div>
+                </article>
+                <article className="inventory-pulse-item">
+                  <div className="inventory-pulse-label">Low stock alerts</div>
+                  <div className={`inventory-pulse-value ${inventoryStats.lowStockCount > 0 ? 'is-alert' : 'is-safe'}`}>
+                    {inventoryStats.lowStockCount}
+                  </div>
+                </article>
+                <article className="inventory-pulse-item">
+                  <div className="inventory-pulse-label">Categories</div>
+                  <div className="inventory-pulse-value">{inventoryStats.categoriesCount}</div>
+                </article>
+              </div>
+            </section>
+          </div>
+        </aside>
+      </div>
+
+      <div className="data-card dashboard-footnote">
+        <div>
+          <strong>Tip:</strong> Prioritize overdue services first, then AMC contracts expiring in under 30 days.
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

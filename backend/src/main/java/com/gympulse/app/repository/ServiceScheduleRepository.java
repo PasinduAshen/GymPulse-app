@@ -24,6 +24,9 @@ public interface ServiceScheduleRepository extends JpaRepository<ServiceSchedule
     @Query("SELECT s FROM ServiceSchedule s JOIN FETCH s.amcContract a WHERE a.admin.id = :adminId ORDER BY s.scheduledDate ASC")
     List<ServiceSchedule> findByAdminId(@Param("adminId") Long adminId);
 
+    @Query("SELECT s FROM ServiceSchedule s JOIN FETCH s.amcContract a ORDER BY s.scheduledDate ASC")
+    List<ServiceSchedule> findAllWithContract();
+
     @Query("SELECT s FROM ServiceSchedule s JOIN FETCH s.amcContract a WHERE a.admin.id = :adminId " +
            "AND (:status IS NULL OR s.status = :status) " +
            "AND (:machineName IS NULL OR LOWER(a.machineName) LIKE LOWER(CONCAT('%', :machineName, '%'))) " +

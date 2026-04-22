@@ -54,6 +54,7 @@ public class PaymentController {
             @RequestParam(required = false) PaymentStatus status,
             @RequestParam(required = false) String machineName,
             @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String companyName,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueFrom,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dueTo,
             @RequestParam(defaultValue = "false") boolean outstandingOnly
@@ -61,7 +62,7 @@ public class PaymentController {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String userEmail = auth.getName();
         return new ResponseEntity<>(
-                amcPaymentService.getPayments(userEmail, status, machineName, brand, dueFrom, dueTo, outstandingOnly),
+            amcPaymentService.getPayments(userEmail, status, machineName, brand, companyName, dueFrom, dueTo, outstandingOnly),
                 HttpStatus.OK
         );
     }

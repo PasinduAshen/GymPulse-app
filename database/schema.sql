@@ -10,8 +10,23 @@ CREATE TABLE IF NOT EXISTS admins (
     name VARCHAR(255) NOT NULL,
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) DEFAULT 'ADMIN',
+    role VARCHAR(50) DEFAULT 'USER',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Manager Invites Table (new onboarding flow)
+CREATE TABLE IF NOT EXISTS manager_invites (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    invited_email VARCHAR(255) NOT NULL,
+    invited_role VARCHAR(50) NOT NULL DEFAULT 'MANAGER',
+    token_hash VARCHAR(255) NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    invited_by BIGINT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP NULL,
+    revoked_at TIMESTAMP NULL,
+    CONSTRAINT fk_manager_invite_inviter FOREIGN KEY (invited_by) REFERENCES admins(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- AMC Contracts Table
