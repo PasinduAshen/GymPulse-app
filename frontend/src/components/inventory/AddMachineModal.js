@@ -70,12 +70,13 @@ const AddMachineModal = ({ onClose, onSaved }) => {
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000,
+      padding: '12px',
       backdropFilter: 'blur(2px)',
     }}>
       <div style={{
         background: 'white', borderRadius: '16px', padding: '28px 32px',
-        width: '520px', maxHeight: '88vh', overflowY: 'auto',
+        width: 'min(520px, 96vw)', maxHeight: 'calc(100vh - 24px)', overflowY: 'auto',
         boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
       }}>
         {/* Header */}
@@ -129,7 +130,7 @@ const AddMachineModal = ({ onClose, onSaved }) => {
         </div>
 
         {/* Form Fields */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
           {[
             { key: 'name', label: 'Machine Name *', placeholder: 'e.g. Treadmill Pro X' },
             { key: 'brand', label: 'Brand *', placeholder: 'e.g. Technogym' },
@@ -163,7 +164,7 @@ const AddMachineModal = ({ onClose, onSaved }) => {
         </div>
 
         {/* Purchase Date + Status */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginTop: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginTop: '14px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>
               Purchase Date

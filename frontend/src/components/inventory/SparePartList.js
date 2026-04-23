@@ -108,13 +108,14 @@ const SparePartList = ({ onEdit, canEdit = false }) => {
         <input
           value={searchName} onChange={e => setSearchName(e.target.value)}
           placeholder="🔍  Search spare parts..."
-          style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', width: '300px', boxSizing: 'border-box' }}
+          style={{ padding: '10px 14px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', width: '100%', maxWidth: '320px', boxSizing: 'border-box' }}
         />
       </div>
 
       {/* Table */}
       <div style={{ background: 'white', borderRadius: '14px', overflow: 'hidden', boxShadow: '0 1px 4px rgba(0,0,0,0.07)', border: '1px solid #e2e8f0' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', minWidth: '960px', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
               {['Image', 'Name', 'Category', 'Quantity', 'Reorder Lvl', 'Unit Price', 'Status', 'Actions'].map(h => (
@@ -183,7 +184,8 @@ const SparePartList = ({ onEdit, canEdit = false }) => {
               </tr>
             ))}
           </tbody>
-        </table>
+          </table>
+        </div>
         {filtered.length === 0 && (
           <div style={{ textAlign: 'center', padding: '50px', color: '#94a3b8' }}>
             <div style={{ fontSize: '40px', marginBottom: '10px' }}>📦</div>
@@ -194,8 +196,8 @@ const SparePartList = ({ onEdit, canEdit = false }) => {
 
       {/* Stock Modal */}
       {stockModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '28px 32px', width: '360px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '12px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '28px 32px', width: 'min(360px, 94vw)', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <h3 style={{ margin: '0 0 6px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
               {stockModal.type === 'in' ? '➕ Stock In' : '➖ Stock Out'}
             </h3>
@@ -224,8 +226,8 @@ const SparePartList = ({ onEdit, canEdit = false }) => {
 
       {/* Edit Modal */}
       {editPart && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '16px', padding: '28px 32px', width: '480px', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '12px' }}>
+          <div style={{ background: 'white', borderRadius: '16px', padding: '28px 32px', width: 'min(480px, 96vw)', maxHeight: '85vh', overflowY: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h3 style={{ margin: 0, fontWeight: '700', fontSize: '18px' }}>Edit Spare Part</h3>
               <button onClick={() => setEditPart(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '20px', color: '#94a3b8' }}>✕</button>
@@ -255,7 +257,7 @@ const SparePartList = ({ onEdit, canEdit = false }) => {
                   style={{ width: '100%', padding: '10px 13px', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '14px', boxSizing: 'border-box' }} />
               </div>
             ))}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '12px', marginBottom: '12px' }}>
               {[['quantity','Quantity'], ['reorderLevel','Reorder Lvl'], ['unitPrice','Unit Price']].map(([f, label]) => (
                 <div key={f}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>{label}</label>

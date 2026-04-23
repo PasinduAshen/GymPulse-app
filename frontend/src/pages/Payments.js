@@ -169,11 +169,11 @@ const Payments = () => {
         </div>
       </div>
 
-      <div className="card" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="card payments-summary-row" style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <strong>Outstanding Total:</strong> LKR {totalOutstanding}
         </div>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <label className="payments-outstanding-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <input
             type="checkbox"
             checked={filters.outstandingOnly}
@@ -440,6 +440,49 @@ const Payments = () => {
           display: flex;
           justify-content: flex-end;
           gap: 0.75rem;
+        }
+
+        @media (max-width: 900px) {
+          .payments-summary-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .payments-filters-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .payments-outstanding-toggle {
+            font-size: 0.92rem;
+          }
+
+          .modal-overlay {
+            padding: 0.75rem;
+          }
+
+          .modal-content {
+            width: 100%;
+            max-height: calc(100vh - 1.5rem);
+            border-radius: 10px;
+          }
+
+          .modal-header,
+          .modal-body,
+          .modal-footer {
+            padding-left: 1rem;
+            padding-right: 1rem;
+          }
+
+          .modal-footer {
+            flex-direction: column-reverse;
+          }
+
+          .modal-footer .btn {
+            width: 100%;
+          }
         }
       `}</style>
     </>

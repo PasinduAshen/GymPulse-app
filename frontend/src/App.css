@@ -574,9 +574,71 @@ body {
   overflow: hidden;
 }
 
+.card {
+  background: white;
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  padding: 1rem;
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.8rem;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem 1rem;
+}
+
+.action-group {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.error-msg {
+  margin-bottom: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.65rem;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  background-color: #f8fafc;
+  color: #1e293b;
+  transition: all 0.2s;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  background-color: white;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
 .custom-table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 760px;
 }
 
 .custom-table th {
@@ -796,15 +858,110 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
   .sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    height: auto;
+    z-index: 180;
+    background: rgba(248, 250, 252, 0.98);
+    border-top: 1px solid rgba(148, 163, 184, 0.22);
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.12);
+    padding: 0.5rem 0.65rem calc(0.55rem + env(safe-area-inset-bottom));
+  }
+
+  .sidebar-header {
     display: none;
   }
+
+  .sidebar-nav {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(74px, 1fr);
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0.35rem;
+    border: 1px solid #dbe3f1;
+    border-radius: 16px;
+    background: #eef2f7;
+  }
+
+  .nav-link {
+    white-space: normal;
+    margin-bottom: 0;
+    min-height: 62px;
+    padding: 0.5rem 0.45rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 0.25rem;
+    color: #94a3b8;
+    border-radius: 12px;
+  }
+
+  .nav-link svg {
+    margin-right: 0;
+    width: 20px;
+  }
+
+  .nav-link:hover,
+  .nav-link.active {
+    background-color: #e8eefc;
+    color: #2563eb;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
   .main-wrapper {
     margin-left: 0;
+    padding-bottom: calc(98px + env(safe-area-inset-bottom));
   }
 
   .content {
     padding: 0 0.85rem 0.85rem;
+  }
+
+  .page-header,
+  .controls-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-wrapper {
+    max-width: none;
+  }
+
+  .filter-group {
+    width: 100%;
+    overflow-x: auto;
+    padding: 0.25rem;
+  }
+
+  .filter-btn {
+    white-space: nowrap;
+  }
+
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .custom-table th,
+  .custom-table td {
+    padding: 0.7rem 0.72rem;
+    font-size: 0.82rem;
   }
 
   .dashboard-hero {
@@ -838,9 +995,52 @@ body {
   .hero-actions .btn {
     flex: 1;
   }
+
+  .auth-page {
+    padding: 1rem;
+  }
+
+  .auth-card {
+    padding: 1.4rem 1.1rem;
+    border-radius: 1rem;
+  }
 }
 
 @media (max-width: 520px) {
+  .content {
+    padding: 0 0.65rem 0.75rem;
+  }
+
+  .sidebar {
+    padding-left: 0.45rem;
+    padding-right: 0.45rem;
+  }
+
+  .sidebar-nav {
+    gap: 0.25rem;
+    padding: 0.3rem;
+  }
+
+  .nav-link {
+    min-height: 58px;
+    font-size: 0.63rem;
+    padding: 0.45rem 0.35rem;
+  }
+
+  .nav-link svg {
+    width: 18px;
+  }
+
+  .page-hero,
+  .dashboard-hero {
+    border-radius: 12px;
+  }
+
+  .page-hero h1,
+  .dashboard-hero h1 {
+    font-size: 1.35rem;
+  }
+
   .summary-grid {
     grid-template-columns: 1fr;
   }
@@ -856,5 +1056,10 @@ body {
 
   .hero-actions .btn {
     width: 100%;
+  }
+
+  .card,
+  .data-card {
+    border-radius: 0.65rem;
   }
 }

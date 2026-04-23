@@ -262,14 +262,18 @@ const Services = () => {
           justify-content: center;
           z-index: 1000;
           backdrop-filter: blur(4px);
+          padding: 0.85rem;
         }
         .modal-content {
           background: white;
           border-radius: 12px;
           width: 90%;
+          max-height: calc(100vh - 1.7rem);
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
           overflow: hidden;
           animation: modalAppear 0.3s ease-out;
+          display: flex;
+          flex-direction: column;
         }
         @keyframes modalAppear {
           from { opacity: 0; transform: translateY(20px); }
@@ -296,6 +300,7 @@ const Services = () => {
         }
         .modal-body {
           padding: 1.5rem;
+          overflow-y: auto;
         }
         .modal-footer {
           padding: 1.25rem 1.5rem;
@@ -304,6 +309,34 @@ const Services = () => {
           display: flex;
           justify-content: flex-end;
           gap: 0.75rem;
+        }
+
+        @media (max-width: 768px) {
+          .modal-overlay {
+            align-items: flex-start;
+            padding: 0.75rem;
+          }
+
+          .modal-content {
+            width: 100%;
+            max-height: calc(100vh - 1.5rem);
+            border-radius: 10px;
+          }
+
+          .modal-header,
+          .modal-body,
+          .modal-footer {
+            padding-left: 1rem;
+            padding-right: 1rem;
+          }
+
+          .modal-footer {
+            flex-direction: column-reverse;
+          }
+
+          .modal-footer .btn {
+            width: 100%;
+          }
         }
       `}</style>
     </>
