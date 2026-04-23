@@ -80,7 +80,7 @@ const MachineGrid = ({ onEdit, canEdit = false }) => {
       <div style={{
         background: 'white', borderRadius: '12px', padding: '20px 24px',
         marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
-        display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px',
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '16px',
         border: '1px solid #e2e8f0',
       }}>
         <div>
@@ -288,11 +288,11 @@ const MachineGrid = ({ onEdit, canEdit = false }) => {
         <div style={{
           position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-          backdropFilter: 'blur(2px)',
+          backdropFilter: 'blur(2px)', padding: '12px',
         }}>
           <div style={{
             background: 'white', borderRadius: '16px', padding: '28px 32px',
-            width: '380px', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center',
+            width: 'min(380px, 94vw)', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center',
           }}>
             <div style={{ fontSize: '48px', marginBottom: '12px' }}>🗑️</div>
             <h3 style={{ margin: '0 0 8px', fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>

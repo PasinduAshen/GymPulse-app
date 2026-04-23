@@ -55,11 +55,12 @@ const AddSparePartModal = ({ onClose, onSaved }) => {
   return (
     <div style={{
       position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.55)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(2px)',
+      display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(2px)',
+      padding: '12px',
     }}>
       <div style={{
         background: 'white', borderRadius: '16px', padding: '28px 32px',
-        width: '520px', maxHeight: '88vh', overflowY: 'auto',
+        width: 'min(520px, 96vw)', maxHeight: 'calc(100vh - 24px)', overflowY: 'auto',
         boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -98,7 +99,7 @@ const AddSparePartModal = ({ onClose, onSaved }) => {
           {errors.image && <p style={{ color: '#ef4444', fontSize: '12px', margin: '4px 0 0' }}>{errors.image}</p>}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
           <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#374151', marginBottom: '6px' }}>Part Name *</label>
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Drive Belt" style={inputStyle('name')} />

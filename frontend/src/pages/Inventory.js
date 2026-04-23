@@ -30,7 +30,7 @@ const Inventory = () => {
   };
 
   return (
-    <div style={{ padding: '32px 36px', minHeight: '100vh', background: '#f8fafc' }}>
+    <div className="inventory-page">
 
       <div className="page-hero" style={{ marginBottom: '1.25rem' }}>
         <div>
@@ -58,30 +58,30 @@ const Inventory = () => {
       )}
 
       {/* Stats Row */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '28px' }}>
+      <div className="inventory-stats-row">
         {[
           { label: 'Total Machines', value: stats.totalMachines, icon: '🏋️', color: '#eff6ff', border: '#bfdbfe' },
           { label: 'Total Spare Parts', value: stats.totalSpareParts, icon: '📦', color: '#f0fdf4', border: '#bbf7d0' },
           { label: 'Low Stock Alerts', value: stats.lowStockCount, icon: '⚠️', color: stats.lowStockCount > 0 ? '#fff7ed' : '#f0fdf4', border: stats.lowStockCount > 0 ? '#fed7aa' : '#bbf7d0' },
         ].map((s, i) => (
-          <div key={i} style={{
+          <div key={i} className="inventory-stat-card" style={{
             flex: 1, background: s.color, border: `1px solid ${s.border}`,
             borderRadius: '12px', padding: '18px 20px',
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}>
             <div>
-              <p style={{ margin: 0, fontSize: '13px', color: '#64748b', fontWeight: '500' }}>{s.label}</p>
-              <p style={{ margin: '4px 0 0', fontSize: '28px', fontWeight: '700', color: '#0f172a' }}>{s.value}</p>
+              <p className="inventory-stat-label" style={{ margin: 0, fontSize: '13px', color: '#64748b', fontWeight: '500' }}>{s.label}</p>
+              <p className="inventory-stat-value" style={{ margin: '4px 0 0', fontSize: '28px', fontWeight: '700', color: '#0f172a' }}>{s.value}</p>
             </div>
-            <span style={{ fontSize: '30px' }}>{s.icon}</span>
+            <span className="inventory-stat-icon" style={{ fontSize: '30px' }}>{s.icon}</span>
           </div>
         ))}
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '2px solid #e2e8f0' }}>
+      <div className="inventory-tabs-row" style={{ display: 'flex', gap: '4px', marginBottom: '24px', borderBottom: '2px solid #e2e8f0' }}>
         {[{ key: 'machines', label: '🔧 Machines' }, { key: 'spareParts', label: '📦 Spare Parts' }].map(tab => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
+          <button key={tab.key} className={`inventory-tab-btn ${activeTab === tab.key ? 'active' : ''}`} onClick={() => setActiveTab(tab.key)} style={{
             padding: '10px 22px', border: 'none', background: 'none', cursor: 'pointer',
             fontWeight: activeTab === tab.key ? '600' : '400', fontSize: '14px',
             color: activeTab === tab.key ? '#2563eb' : '#64748b',
@@ -106,6 +106,72 @@ const Inventory = () => {
       {showAddSparePart && (
         <AddSparePartModal onClose={() => setShowAddSparePart(false)} onSaved={onSaved} />
       )}
+
+      <style>{`
+        .inventory-page {
+          padding: 32px 36px;
+          min-height: 100vh;
+          background: #f8fafc;
+        }
+
+        .inventory-stats-row {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 16px;
+          margin-bottom: 28px;
+        }
+
+        .inventory-tabs-row {
+          overflow-x: auto;
+          white-space: nowrap;
+        }
+
+        .inventory-tab-btn {
+          white-space: nowrap;
+        }
+
+        @media (max-width: 980px) {
+          .inventory-page {
+            padding: 20px 18px;
+          }
+
+          .inventory-stats-row {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+          }
+        }
+
+        @media (max-width: 680px) {
+          .inventory-page {
+            padding: 14px 12px;
+          }
+
+          .inventory-stats-row {
+            grid-template-columns: 1fr;
+            margin-bottom: 18px;
+          }
+
+          .inventory-stat-card {
+            padding: 14px 16px !important;
+          }
+
+          .inventory-stat-label {
+            font-size: 12px !important;
+          }
+
+          .inventory-stat-value {
+            font-size: 22px !important;
+          }
+
+          .inventory-stat-icon {
+            font-size: 25px !important;
+          }
+
+          .inventory-tab-btn {
+            padding: 9px 14px !important;
+            font-size: 13px !important;
+          }
+        }
+      `}</style>
     </div>
   );
 };
