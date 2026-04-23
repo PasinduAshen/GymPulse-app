@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/amc")
@@ -116,7 +117,16 @@ public class AmcController {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String userEmail = auth.getName();
             ServiceSchedule completed = amcService.completeService(id, request.getNotes(), userEmail);
-            return new ResponseEntity<>(completed, HttpStatus.OK);
+            return new ResponseEntity<>(
+                    Map.of(
+                            "message", "Service marked as completed",
+                            "id", completed.getId(),
+                            "status", completed.getStatus(),
+                            "completedDate", completed.getCompletedDate(),
+                            "notes", completed.getNotes()
+                    ),
+                    HttpStatus.OK
+            );
         } catch (Exception e) {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
