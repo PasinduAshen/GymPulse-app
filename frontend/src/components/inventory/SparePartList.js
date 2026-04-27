@@ -118,8 +118,8 @@ const SparePartList = ({ onEdit, canEdit = false }) => {
           <table style={{ width: '100%', minWidth: '960px', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-              {['Image', 'Name', 'Category', 'Quantity', 'Reorder Lvl', 'Unit Price', 'Status', 'Actions'].map(h => (
-                <th key={h} style={{ padding: '12px 16px', textAlign: 'left', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px' }}>{h}</th>
+              {['Image', 'Name', 'Category', 'Quantity', 'Reorder Lvl', 'Unit Price', 'Status', 'Actions'].map((h) => (
+                <th key={h} style={{ padding: '12px 16px', textAlign: 'center', fontSize: '11px', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', whiteSpace: 'nowrap' }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -144,19 +144,19 @@ const SparePartList = ({ onEdit, canEdit = false }) => {
                     <span style={{ display: p.imageUrl ? 'none' : 'block', fontSize: '24px' }}>📦</span>
                   </div>
                 </td>
-                <td style={{ padding: '10px 16px', fontWeight: '600', color: '#0f172a', fontSize: '14px' }}>{p.name}</td>
-                <td style={{ padding: '10px 16px', color: '#64748b', fontSize: '14px' }}>{p.category || '—'}</td>
-                <td style={{ padding: '10px 16px', fontWeight: '700', fontSize: '16px', color: p.lowStock ? '#dc2626' : '#0f172a' }}>{p.quantity}</td>
-                <td style={{ padding: '10px 16px', color: '#64748b', fontSize: '14px' }}>{p.reorderLevel}</td>
-                <td style={{ padding: '10px 16px', fontSize: '14px', color: '#0f172a' }}>Rs. {parseFloat(p.unitPrice).toFixed(2)}</td>
-                <td style={{ padding: '10px 16px' }}>
+                <td style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '600', color: '#0f172a', fontSize: '14px', whiteSpace: 'nowrap' }}>{p.name}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'center', color: '#64748b', fontSize: '14px', whiteSpace: 'nowrap' }}>{p.category || '—'}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'center', fontWeight: '700', fontSize: '16px', color: p.lowStock ? '#dc2626' : '#0f172a', whiteSpace: 'nowrap' }}>{p.quantity}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'center', color: '#64748b', fontSize: '14px', whiteSpace: 'nowrap' }}>{p.reorderLevel}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'center', fontSize: '14px', color: '#0f172a', whiteSpace: 'nowrap' }}>Rs. {parseFloat(p.unitPrice).toFixed(2)}</td>
+                <td style={{ padding: '10px 16px', textAlign: 'center', whiteSpace: 'nowrap' }}>
                   {p.lowStock
                     ? <span style={{ background: '#fef2f2', color: '#dc2626', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', border: '1px solid #fecaca' }}>⚠ LOW STOCK</span>
                     : <span style={{ background: '#f0fdf4', color: '#16a34a', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', border: '1px solid #bbf7d0' }}>✓ OK</span>
                   }
                 </td>
                 <td style={{ padding: '10px 16px' }}>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
                     {canEdit ? (
                       <>
                         <button onClick={() => { setStockModal({ part: p, type: 'in' }); setStockQty(1); }}

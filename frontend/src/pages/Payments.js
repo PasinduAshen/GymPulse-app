@@ -218,7 +218,7 @@ const Payments = () => {
             <thead>
               <tr>
                 <th>Invoice #</th>
-                <th>Company</th>
+                <th className="company-header">Company</th>
                 <th>Due Date</th>
                 <th>Amount Due</th>
                 <th>Paid</th>
@@ -240,7 +240,7 @@ const Payments = () => {
                 filteredPayments.map((p) => (
                   <tr key={p.id}>
                     <td>{p.invoiceNumber}</td>
-                    <td>{p.companyName || 'N/A'}</td>
+                    <td className="company-cell">{p.companyName || 'N/A'}</td>
                     <td>{p.dueDate}</td>
                     <td>LKR {Number(p.amountDue || 0).toFixed(2)}</td>
                     <td>LKR {Number(p.amountPaid || 0).toFixed(2)}</td>
