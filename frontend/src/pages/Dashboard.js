@@ -238,7 +238,7 @@ const Dashboard = () => {
             <table className="custom-table">
               <thead>
                 <tr>
-                  <th>Company</th>
+                  <th className="company-header">Company</th>
                   <th>Scheduled Date</th>
                   <th>Status</th>
                 </tr>
@@ -253,7 +253,7 @@ const Dashboard = () => {
                 ) : (
                   upcomingServices.map((service) => (
                     <tr key={service.id} className="clickable-row" onClick={() => navigate('/services')}>
-                      <td>
+                      <td className="company-cell">
                         <div className="machine-cell">
                           <span className="machine-name">{service.amcContract?.companyName || 'Unknown Company'}</span>
                         </div>

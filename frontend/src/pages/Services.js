@@ -141,7 +141,7 @@ const Services = () => {
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Company</th>
+                <th className="company-header">Company</th>
                 <th>Scheduled Date</th>
                 <th>Completed Date</th>
                 <th>Status</th>
@@ -164,7 +164,7 @@ const Services = () => {
               ) : (
                 filteredSchedules.map(schedule => (
                   <tr key={schedule.id}>
-                    <td>
+                    <td className="company-cell">
                       <div className="machine-cell">
                         <span className="machine-name">{schedule.amcContract?.companyName || 'Unknown Company'}</span>
                       </div>
