@@ -124,7 +124,7 @@ const ManagerInvites = () => {
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Email</th>
+                <th className="company-header">Email</th>
                 <th>Role</th>
                 <th>Status</th>
                 <th>Expires At</th>
@@ -144,7 +144,7 @@ const ManagerInvites = () => {
               ) : (
                 invites.map((invite) => (
                   <tr key={invite.id}>
-                    <td>{invite.invitedEmail}</td>
+                    <td className="company-cell">{invite.invitedEmail}</td>
                     <td>{invite.invitedRole}</td>
                     <td>{invite.status}</td>
                     <td>{invite.expiresAt ? new Date(invite.expiresAt).toLocaleString() : 'N/A'}</td>

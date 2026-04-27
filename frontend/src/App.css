@@ -162,7 +162,7 @@ body {
 
 /* Dashboard Content */
 .content {
-  padding: 0 1.25rem 1.1rem;
+  padding: 0.85rem 1.25rem 1.1rem;
   max-width: var(--content-max-width);
   width: 100%;
   margin: 0 auto;
@@ -179,12 +179,12 @@ body {
     radial-gradient(110% 130% at 100% 0%, rgba(14, 165, 233, 0.22) 0%, rgba(14, 165, 233, 0) 55%),
     linear-gradient(120deg, #0b1226 0%, #13203f 55%, #1f3a78 100%);
   color: #dbeafe;
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: 14px;
+  padding: 1rem 1.2rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   box-shadow: 0 14px 32px rgba(15, 23, 42, 0.22);
 }
 
@@ -226,16 +226,16 @@ body {
 }
 
 .dashboard-hero h1 {
-  margin: 0.4rem 0;
+  margin: 0;
   color: #ffffff;
-  font-size: 2rem;
+  font-size: 1.95rem;
   letter-spacing: -0.02em;
 }
 
 .dashboard-hero p {
-  margin: 0;
+  margin: 0.35rem 0 0;
   color: #bfdbfe;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   max-width: 560px;
 }
 
@@ -644,7 +644,9 @@ body {
 .custom-table th {
   background-color: #f8fafc;
   padding: 0.82rem 0.9rem;
-  text-align: left;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-muted);
@@ -657,6 +659,22 @@ body {
   padding: 0.85rem 0.9rem;
   border-bottom: 1px solid var(--border-color);
   font-size: 0.875rem;
+  vertical-align: middle;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.custom-table th.company-header {
+  text-align: center;
+  transform: translateX(-18px);
+}
+
+.custom-table td.company-cell {
+  text-align: left;
+}
+
+.custom-table td.company-cell > div {
+  justify-content: flex-start;
 }
 
 .machine-cell {
@@ -931,7 +949,7 @@ body {
   }
 
   .content {
-    padding: 0 0.85rem 0.85rem;
+    padding: 0.7rem 0.85rem 0.85rem;
   }
 
   .page-header,
@@ -965,7 +983,7 @@ body {
   }
 
   .dashboard-hero {
-    padding: 1rem;
+    padding: 0.85rem 0.95rem;
   }
 
   .page-hero {
@@ -977,7 +995,7 @@ body {
   }
 
   .dashboard-hero h1 {
-    font-size: 1.55rem;
+    font-size: 1.45rem;
   }
 
   .summary-grid {
@@ -1008,7 +1026,7 @@ body {
 
 @media (max-width: 520px) {
   .content {
-    padding: 0 0.65rem 0.75rem;
+    padding: 0.6rem 0.65rem 0.75rem;
   }
 
   .sidebar {

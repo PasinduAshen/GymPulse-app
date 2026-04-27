@@ -32,7 +32,7 @@ const Inventory = () => {
   return (
     <div className="inventory-page">
 
-      <div className="page-hero" style={{ marginBottom: '1.25rem' }}>
+      <div className="page-hero">
         <div>
           <span className="hero-pill">Stock Command</span>
           <h1>Inventory Management</h1>
@@ -109,9 +109,9 @@ const Inventory = () => {
 
       <style>{`
         .inventory-page {
-          padding: 32px 36px;
-          min-height: 100vh;
-          background: #f8fafc;
+          padding: 0;
+          min-height: auto;
+          background: transparent;
         }
 
         .inventory-stats-row {
@@ -131,20 +131,12 @@ const Inventory = () => {
         }
 
         @media (max-width: 980px) {
-          .inventory-page {
-            padding: 20px 18px;
-          }
-
           .inventory-stats-row {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
         }
 
         @media (max-width: 680px) {
-          .inventory-page {
-            padding: 14px 12px;
-          }
-
           .inventory-stats-row {
             grid-template-columns: 1fr;
             margin-bottom: 18px;

@@ -123,7 +123,7 @@ const AmcManagement = () => {
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Company</th>
+                <th className="company-header">Company</th>
                 <th>AMC Start</th>
                 <th>AMC End</th>
                 <th>Status</th>
@@ -140,7 +140,7 @@ const AmcManagement = () => {
               ) : (
                 filteredAmcs.map((amc) => (
                   <tr key={amc.id}>
-                    <td>
+                    <td className="company-cell">
                       <div className="machine-cell">
                         <span className="machine-name">{amc.companyName || 'Unknown Company'}</span>
                       </div>
