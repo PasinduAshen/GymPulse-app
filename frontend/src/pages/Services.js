@@ -1,14 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { amcService, authService } from '../services/api';
 import ServicesFilter from '../components/ServicesFilter';
+import { hasAnyRole } from '../utils/auth';
 
 const Services = () => {
+  const canManageServices = hasAnyRole(['ADMIN', 'MANAGER']);
   const [schedules, setSchedules] = useState([]);
   const [filters, setFilters] = useState({
     status: 'All',
-    machineName: '',
-    brand: '',
+    companyName: '',
     startDate: '',
     endDate: ''
   });
@@ -28,12 +29,14 @@ const Services = () => {
     try {
       const response = await amcService.getSchedules(filters);
       setSchedules(response.data);
+      return response.data;
     } catch (err) {
       if (err.response?.status === 403 || err.response?.status === 401) {
         authService.logout();
         navigate('/login');
       }
       setError('Failed to load service schedules.');
+      return [];
     } finally {
       setLoading(false);
     }
@@ -43,11 +46,19 @@ const Services = () => {
     fetchSchedules();
   }, [fetchSchedules]);
 
+  const filteredSchedules = useMemo(() => {
+    const term = (filters.companyName || '').trim().toLowerCase();
+    if (!term) return schedules;
+
+    return schedules.filter((schedule) =>
+      (schedule.amcContract?.companyName || '').toLowerCase().includes(term)
+    );
+  }, [schedules, filters.companyName]);
+
   const handleResetFilters = () => {
     setFilters({
       status: 'All',
-      machineName: '',
-      brand: '',
+      companyName: '',
       startDate: '',
       endDate: ''
     });
@@ -60,16 +71,46 @@ const Services = () => {
   };
 
   const handleCompleteService = async () => {
-    if (!selectedService) return;
+    if (!selectedService || isSubmitting) return;
     
+    const selectedId = selectedService.id;
     setIsSubmitting(true);
+    setError('');
     try {
-      await amcService.completeService(selectedService.id, completionNotes);
+      await amcService.completeService(selectedId, completionNotes);
+
+      // Optimistically update local state so users immediately see completion.
+      setSchedules((prev) =>
+        prev.map((schedule) =>
+          schedule.id === selectedId
+            ? { ...schedule, status: 'COMPLETED' }
+            : schedule
+        )
+      );
+
       setShowModal(false);
-      fetchSchedules();
+      setSelectedService(null);
+      await fetchSchedules();
     } catch (err) {
       const msg = err.response?.data || 'Failed to complete service.';
-      setError(typeof msg === 'object' ? JSON.stringify(msg) : msg);
+      const messageText = typeof msg === 'object' ? JSON.stringify(msg) : String(msg);
+      const lowerMessage = messageText.toLowerCase();
+      const alreadyCompleted = lowerMessage.includes('already') && lowerMessage.includes('completed');
+
+      if (alreadyCompleted) {
+        setSchedules((prev) =>
+          prev.map((schedule) =>
+            schedule.id === selectedId
+              ? { ...schedule, status: 'COMPLETED' }
+              : schedule
+          )
+        );
+        setShowModal(false);
+        setSelectedService(null);
+        await fetchSchedules();
+      } else {
+        setError(messageText);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -77,10 +118,11 @@ const Services = () => {
 
   return (
     <>
-      <div className="page-header">
-        <div className="page-title">
+      <div className="page-hero">
+        <div>
+          <span className="hero-pill">Service Desk</span>
           <h1>Service Schedules</h1>
-          <p style={{ color: '#64748b', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+          <p>
             Track and manage upcoming maintenance for your gym equipment.
           </p>
         </div>
@@ -99,9 +141,9 @@ const Services = () => {
           <table className="custom-table">
             <thead>
               <tr>
-                <th>Machine</th>
-                <th>Brand</th>
+                <th className="company-header">Company</th>
                 <th>Scheduled Date</th>
+                <th>Completed Date</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -113,27 +155,27 @@ const Services = () => {
                     Loading schedules...
                   </td>
                 </tr>
-              ) : schedules.length === 0 ? (
+              ) : filteredSchedules.length === 0 ? (
                 <tr>
                   <td colSpan="5" style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
                     No service schedules found matching the filters.
                   </td>
                 </tr>
               ) : (
-                schedules.map(schedule => (
+                filteredSchedules.map(schedule => (
                   <tr key={schedule.id}>
-                    <td>
+                    <td className="company-cell">
                       <div className="machine-cell">
-                        <span className="machine-name">{schedule.amcContract?.machineName || 'Unknown Machine'}</span>
+                        <span className="machine-name">{schedule.amcContract?.companyName || 'Unknown Company'}</span>
                       </div>
                     </td>
-                    <td>{schedule.amcContract?.brand || 'N/A'}</td>
                     <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <svg style={{width: '16px', color: '#64748b'}} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             {schedule.scheduledDate}
                         </div>
                     </td>
+                    <td>{schedule.completedDate || '-'}</td>
                     <td>
                       <span className={`status-badge ${
                         schedule.status === 'COMPLETED' ? 'status-active' : 
@@ -144,12 +186,12 @@ const Services = () => {
                     </td>
                     <td>
                       <div className="action-group">
-                        <button 
+                        <button
                           className="btn btn-primary btn-small" 
-                          disabled={schedule.status === 'COMPLETED'}
+                          disabled={schedule.status === 'COMPLETED' || !canManageServices}
                           onClick={() => openCompletionModal(schedule)}
                         >
-                          Mark Complete
+                          {canManageServices ? 'Mark Complete' : 'Read Only'}
                         </button>
                       </div>
                     </td>
@@ -171,7 +213,7 @@ const Services = () => {
             </div>
             <div className="modal-body">
               <p style={{ marginBottom: '1rem' }}>
-                Are you sure you want to mark maintenance for <strong>{selectedService?.amcContract?.machineName}</strong> as completed?
+                Are you sure you want to mark maintenance for <strong>{selectedService?.amcContract?.companyName || 'this company'}</strong> as completed?
               </p>
               
               <div className="form-group">
@@ -187,6 +229,7 @@ const Services = () => {
             </div>
             <div className="modal-footer">
               <button 
+                type="button"
                 className="btn btn-outline" 
                 onClick={() => setShowModal(false)}
                 disabled={isSubmitting}
@@ -194,9 +237,10 @@ const Services = () => {
                 Cancel
               </button>
               <button 
+                type="button"
                 className="btn btn-primary" 
                 onClick={handleCompleteService}
-                disabled={isSubmitting}
+                disabled={isSubmitting || !selectedService}
               >
                 {isSubmitting ? 'Updating...' : 'Confirm Completion'}
               </button>
@@ -218,14 +262,18 @@ const Services = () => {
           justify-content: center;
           z-index: 1000;
           backdrop-filter: blur(4px);
+          padding: 0.85rem;
         }
         .modal-content {
           background: white;
           border-radius: 12px;
           width: 90%;
+          max-height: calc(100vh - 1.7rem);
           box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
           overflow: hidden;
           animation: modalAppear 0.3s ease-out;
+          display: flex;
+          flex-direction: column;
         }
         @keyframes modalAppear {
           from { opacity: 0; transform: translateY(20px); }
@@ -252,6 +300,7 @@ const Services = () => {
         }
         .modal-body {
           padding: 1.5rem;
+          overflow-y: auto;
         }
         .modal-footer {
           padding: 1.25rem 1.5rem;
@@ -260,6 +309,34 @@ const Services = () => {
           display: flex;
           justify-content: flex-end;
           gap: 0.75rem;
+        }
+
+        @media (max-width: 768px) {
+          .modal-overlay {
+            align-items: flex-start;
+            padding: 0.75rem;
+          }
+
+          .modal-content {
+            width: 100%;
+            max-height: calc(100vh - 1.5rem);
+            border-radius: 10px;
+          }
+
+          .modal-header,
+          .modal-body,
+          .modal-footer {
+            padding-left: 1rem;
+            padding-right: 1rem;
+          }
+
+          .modal-footer {
+            flex-direction: column-reverse;
+          }
+
+          .modal-footer .btn {
+            width: 100%;
+          }
         }
       `}</style>
     </>

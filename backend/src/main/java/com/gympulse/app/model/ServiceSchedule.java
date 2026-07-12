@@ -1,11 +1,13 @@
 package com.gympulse.app.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "service_schedules")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class ServiceSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -13,6 +15,7 @@ public class ServiceSchedule {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "amc_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private AmcContract amcContract;
 
     @Column(name = "scheduled_date")

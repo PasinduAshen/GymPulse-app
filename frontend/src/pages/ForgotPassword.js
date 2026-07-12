@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { authService } from '../services/api';
 
 const ForgotPassword = () => {
@@ -8,22 +9,18 @@ const ForgotPassword = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [step, setStep] = useState(1); // 1: Email, 2: Code, 3: New Password
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleRequestCode = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    setSuccess('');
     try {
       await authService.forgotPassword(email);
-      setSuccess('Recovery code sent! Check your terminal if email fails.');
+      toast.success('Recovery code sent! Check your email.');
       setStep(2);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send recovery code. Ensure email is registered.');
+      toast.error(err.response?.data?.message || 'Failed to send recovery code. Ensure email is registered.');
     } finally {
       setIsLoading(false);
     }
@@ -32,13 +29,12 @@ const ForgotPassword = () => {
   const handleVerifyCode = async (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    setSuccess('');
     try {
       await authService.verifyCode(email, code);
+      toast.success('Recovery code verified.');
       setStep(3);
     } catch (err) {
-      setError(err.response?.data?.message || 'Invalid or expired recovery code.');
+      toast.error(err.response?.data?.message || 'Invalid or expired recovery code.');
     } finally {
       setIsLoading(false);
     }
@@ -47,22 +43,21 @@ const ForgotPassword = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      setError('Passwords do not match.');
+      toast.error('Passwords do not match.');
       return;
     }
     if (newPassword.length < 8) {
-        setError('Password must be at least 8 characters long.');
+        toast.error('Password must be at least 8 characters long.');
         return;
     }
 
     setIsLoading(true);
-    setError('');
     try {
       await authService.resetPassword({ email, code, newPassword });
-      setSuccess('Password updated! Redirecting to login...');
+      toast.success('Password updated! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update password.');
+      toast.error(err.response?.data?.message || 'Failed to update password.');
     } finally {
       setIsLoading(false);
     }
@@ -77,9 +72,6 @@ const ForgotPassword = () => {
           {step === 2 && 'Verify Code'}
           {step === 3 && 'New Password'}
         </h2>
-        
-        {error && <div className="error-msg">{error}</div>}
-        {success && <div className="success-msg">{success}</div>}
         
         {step === 1 && (
           <form onSubmit={handleRequestCode}>
